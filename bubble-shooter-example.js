@@ -802,14 +802,14 @@ window.onload = function() {
         var yoffset =  level.tileheight/2;
         
         // Draw level background
-        context.fillStyle = "#8c8c8c";
+        context.fillStyle = "#151929"; // darker game area background
         context.fillRect(level.x - 4, level.y - 4, level.width + 8, level.height + 4 - yoffset);
         
         // Render tiles
         renderTiles();
         
         // Draw level bottom
-        context.fillStyle = "#656565";
+        context.fillStyle = "#101422"; // dark floor band
         var floorTop = level.y - 4 + level.height + 4 - yoffset;
         var floorHeight = 2*level.tileheight + 3;
         context.fillRect(level.x - 4, floorTop, level.width + 8, floorHeight);
@@ -819,16 +819,16 @@ window.onload = function() {
         var scores = [300, 400, 500, 400, 300];
         for (var s=0; s<5; s++) {
             var sx = level.x + s*segmentWidth;
-            context.fillStyle = "#727272";
-            context.fillRect(Math.round(sx), floorTop, 2, floorHeight);
-            context.fillStyle = "#ffffff";
-            context.font = "18px Verdana";
+            context.fillStyle = "#2b3570"; // divider bars
+            context.fillRect(Math.round(sx), floorTop, 4, floorHeight); // thicker separator
+            context.fillStyle = "#4e6cff"; // blue labels
+            context.font = "bold 20px Verdana"; // bold labels
             // place labels near the top of the floor band so they're above the shooter
-            drawCenterText(scores[s].toString(), sx, floorTop + 16, segmentWidth);
+            drawCenterText(scores[s].toString(), sx, floorTop + 10, segmentWidth);
         }
         
         // Draw score
-        context.fillStyle = "#ffffff";
+        context.fillStyle = "#cfd6ff";
         context.font = "18px Verdana";
         var scorex = level.x + level.width - 150;
         var scorey = level.y+level.height + level.tileheight - yoffset - 0;
@@ -854,10 +854,10 @@ window.onload = function() {
         
         // Game Over overlay
         if (gamestate == gamestates.gameover) {
-            context.fillStyle = "rgba(0, 0, 0, 0.8)";
+        context.fillStyle = "rgba(0, 0, 0, 0.8)";
             context.fillRect(level.x - 4, level.y - 4, level.width + 8, level.height + 2 * level.tileheight + 8 - yoffset);
             
-            context.fillStyle = "#ffffff";
+        context.fillStyle = "#ffffff";
             context.font = "24px Verdana";
             drawCenterText("Game Over!", level.x, level.y + level.height / 2 + 10, level.width);
             drawCenterText("Click to start", level.x, level.y + level.height / 2 + 40, level.width);
@@ -875,20 +875,20 @@ window.onload = function() {
     // Draw a frame around the game
     function drawFrame() {
         // Draw background
-        context.fillStyle = "#e8eaec";
+        context.fillStyle = "#0b0f1c"; // page background
         context.fillRect(0, 0, canvas.width, canvas.height);
         
         // Draw header
-        context.fillStyle = "#303030";
+        context.fillStyle = "#0a0d19";
         context.fillRect(0, 0, canvas.width, 79);
         
         // Draw title
-        context.fillStyle = "#ffffff";
+        context.fillStyle = "#dbe3ff";
         context.font = "24px Verdana";
-        context.fillText("Bubble Shooter Example - Rembound.com", 10, 37);
+        context.fillText("Bubble Shooter", 10, 37);
         
         // Display fps
-        context.fillStyle = "#ffffff";
+        context.fillStyle = "#9fb2ff";
         context.font = "12px Verdana";
         context.fillText("Fps: " + fps, 13, 57);
     }
@@ -940,21 +940,16 @@ window.onload = function() {
         var centery = player.y + level.tileheight/2;
         
         // Draw player background circle
-        context.fillStyle = "#7a7a7a";
+        context.fillStyle = "#0e1324";
         context.beginPath();
         context.arc(centerx, centery, level.radius+12, 0, 2*Math.PI, false);
         context.fill();
         context.lineWidth = 2;
-        context.strokeStyle = "#8c8c8c";
+        context.strokeStyle = "#1d2a55";
         context.stroke();
 
-        // Draw the angle
-        context.lineWidth = 2;
-        context.strokeStyle = "#0000ff";
-        context.beginPath();
-        context.moveTo(centerx, centery);
-        context.lineTo(centerx + 1.5*level.tilewidth * Math.cos(degToRad(player.angle)), centery - 1.5*level.tileheight * Math.sin(degToRad(player.angle)));
-        context.stroke();
+        // Draw dotted aim projection
+        renderAimDots(centerx, centery);
         
         // Draw the next bubble
         drawBubble(player.nextbubble.x, player.nextbubble.y, player.nextbubble.tiletype);
@@ -964,6 +959,60 @@ window.onload = function() {
             drawBubble(player.bubble.x, player.bubble.y, player.bubble.tiletype);
         }
         
+    }
+
+    // Render aiming dots with simple wall bounces
+    function renderAimDots(startX, startY) {
+        // Do not draw while bubble is flying
+        if (gamestate != gamestates.ready) return;
+        var angle = degToRad(player.angle);
+        var dirx = Math.cos(angle);
+        var diry = -Math.sin(angle);
+        var x = startX;
+        var y = startY;
+        var step = 24; // pixels per dot spacing
+        var maxDots = 22;
+        var leftBound = level.x + level.tilewidth/2;
+        var rightBound = level.x + level.width - level.tilewidth/2;
+        var topStop = level.y + level.tileheight/2; // roof stop
+        context.fillStyle = "#4ade80"; // green dots
+        for (var i=0; i<maxDots; i++) {
+            // advance
+            x += dirx * step;
+            y += diry * step;
+            // bounce on side walls using center bounds
+            if (x <= leftBound) {
+                x = leftBound + (leftBound - x);
+                dirx = -dirx;
+            } else if (x >= rightBound) {
+                x = rightBound - (x - rightBound);
+                dirx = -dirx;
+            }
+            // stop near the top
+            if (y <= topStop) break;
+
+            // collision against existing bubbles
+            var hit = false;
+            for (var ci=0; ci<level.columns && !hit; ci++) {
+                for (var cj=0; cj<level.rows && !hit; cj++) {
+                    var t = level.tiles[ci][cj];
+                    if (t.type < 0) continue;
+                    var c = getTileCoordinate(ci, cj);
+                    // compare centers
+                    if (circleIntersection(x, y, level.radius, c.tilex + level.tilewidth/2, c.tiley + level.tileheight/2, level.radius)) {
+                        hit = true;
+                    }
+                }
+            }
+
+            // draw current dot
+            context.beginPath();
+            context.arc(x, y, 4, 0, Math.PI*2, false);
+            context.fill();
+
+            // If we hit a bubble, stop drawing more dots
+            if (hit) break;
+        }
     }
     
     // Get the tile coordinate

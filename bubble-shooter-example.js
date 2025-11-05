@@ -102,6 +102,10 @@ window.onload = function() {
     var animationstate = 0;
     var animationtime = 0;
     
+    // Aim dots animation
+    var aimDotsOffset = 0;     // distance offset along the path (pixels)
+    var aimDotsSpeed = 120;    // pixels per second (slower)
+
     // Clusters
     var showcluster = false;
     var cluster = [];
@@ -273,6 +277,9 @@ window.onload = function() {
         // Update the fps counter
         updateFps(dt);
         
+        // Animate aiming dots
+        aimDotsOffset += dt * aimDotsSpeed;
+
         if (gamestate == gamestates.ready) {
             // Game is ready for player input
         } else if (gamestate == gamestates.shootbubble) {
@@ -810,21 +817,39 @@ window.onload = function() {
         
         // Draw level bottom
         context.fillStyle = "#101422"; // dark floor band
-        var floorTop = level.y - 4 + level.height + 4 - yoffset;
-        var floorHeight = 2*level.tileheight + 3;
+        var floorTop = level.y - 4 + level.height + 4 - yoffset - 40;
+        var floorHeight = 2*level.tileheight + 50; // taller floor band
         context.fillRect(level.x - 4, floorTop, level.width + 8, floorHeight);
+
+        // Top baseline across floor (placed above the score area)
+        var baseLineHeight = 10;
+        var baseLineY = floorTop + 26; // just below labels
+        context.fillStyle = "#3b59ff"; // bright blue baseline
+        context.fillRect(level.x - 4, baseLineY, level.width + 8, baseLineHeight);
 
         // Draw 5 scoring segments and their labels
         var segmentWidth = level.width / 5;
         var scores = [300, 400, 500, 400, 300];
         for (var s=0; s<5; s++) {
             var sx = level.x + s*segmentWidth;
-            context.fillStyle = "#2b3570"; // divider bars
-            context.fillRect(Math.round(sx), floorTop, 4, floorHeight); // thicker separator
+            // Rounded pillar-like separator centered in each segment boundary
+            if (s > 0) {
+                var pillarWidth = 18;
+                // Compute full available height from baseline to near bottom, then use half
+                var bottomMargin = 10; // space above the bottom of floor
+                var fullHeight = Math.max(0, (floorTop + floorHeight - bottomMargin) - (baseLineY + baseLineHeight));
+                var pillarHeight = Math.max(12, Math.floor(fullHeight / 2));
+                var px = Math.round(sx - pillarWidth/2);
+                var py = baseLineY + (baseLineHeight / 2) - pillarHeight; // attach directly under baseline
+                context.fillStyle =  "#3854ff";
+                context.strokeStyle = "#1c2b6600";
+                drawRoundedRectTopCorners(px, py, pillarWidth, pillarHeight, 10);
+                context.fill();
+            }
             context.fillStyle = "#4e6cff"; // blue labels
             context.font = "bold 20px Verdana"; // bold labels
             // place labels near the top of the floor band so they're above the shooter
-            drawCenterText(scores[s].toString(), sx, floorTop + 10, segmentWidth);
+            drawCenterText(scores[s].toString(), sx, floorTop + 20, segmentWidth);
         }
         
         // Draw score
@@ -879,18 +904,48 @@ window.onload = function() {
         context.fillRect(0, 0, canvas.width, canvas.height);
         
         // Draw header
-        context.fillStyle = "#0a0d19";
-        context.fillRect(0, 0, canvas.width, 79);
+        // context.fillStyle = "#0a0d19";
+        // context.fillRect(0, 0, canvas.width, 79);
         
-        // Draw title
-        context.fillStyle = "#dbe3ff";
-        context.font = "24px Verdana";
-        context.fillText("Bubble Shooter", 10, 37);
+        // // Draw title
+        // context.fillStyle = "#dbe3ff";
+        // context.font = "24px Verdana";
+        // context.fillText("Bubble Shooter", 10, 37);
         
-        // Display fps
-        context.fillStyle = "#9fb2ff";
-        context.font = "12px Verdana";
-        context.fillText("Fps: " + fps, 13, 57);
+        // // Display fps
+        // context.fillStyle = "#9fb2ff";
+        // context.font = "12px Verdana";
+        // context.fillText("Fps: " + fps, 13, 57);
+    }
+
+    // Draw a rounded rectangle path (not filled/stroked yet)
+    function drawRoundedRect(x, y, w, h, r) {
+        var rr = Math.min(r, Math.floor(Math.min(w, h) / 2));
+        context.beginPath();
+        context.moveTo(x + rr, y);
+        context.lineTo(x + w - rr, y);
+        context.arc(x + w - rr, y + rr, rr, -Math.PI/2, 0, false);
+        context.lineTo(x + w, y + h - rr);
+        context.arc(x + w - rr, y + h - rr, rr, 0, Math.PI/2, false);
+        context.lineTo(x + rr, y + h);
+        context.arc(x + rr, y + h - rr, rr, Math.PI/2, Math.PI, false);
+        context.lineTo(x, y + rr);
+        context.arc(x + rr, y + rr, rr, Math.PI, 1.5*Math.PI, false);
+        context.closePath();
+    }
+
+    // Draw a rounded rectangle with only the top-left and top-right corners rounded
+    function drawRoundedRectTopCorners(x, y, w, h, r) {
+        var rr = Math.min(r, Math.floor(Math.min(w, h) / 2));
+        context.beginPath();
+        context.moveTo(x, y + h);
+        context.lineTo(x, y + rr);
+        context.arc(x + rr, y + rr, rr, Math.PI, 1.5*Math.PI, false); // top-left corner
+        context.lineTo(x + w - rr, y);
+        context.arc(x + w - rr, y + rr, rr, -Math.PI/2, 0, false); // top-right corner
+        context.lineTo(x + w, y + h);
+        context.lineTo(x, y + h);
+        context.closePath();
     }
     
     // Render tiles
@@ -976,10 +1031,13 @@ window.onload = function() {
         var rightBound = level.x + level.width - level.tilewidth/2;
         var topStop = level.y + level.tileheight/2; // roof stop
         context.fillStyle = "#4ade80"; // green dots
-        for (var i=0; i<maxDots; i++) {
-            // advance
-            x += dirx * step;
-            y += diry * step;
+        // Start with a partial step so dots appear to move forward
+        var advance = aimDotsOffset % step;
+        var dots = 0;
+        while (dots < maxDots) {
+            // advance by current segment length (partial for first, full afterwards)
+            x += dirx * advance;
+            y += diry * advance;
             // bounce on side walls using center bounds
             if (x <= leftBound) {
                 x = leftBound + (leftBound - x);
@@ -1012,6 +1070,9 @@ window.onload = function() {
 
             // If we hit a bubble, stop drawing more dots
             if (hit) break;
+            // after first iteration, always advance by full step
+            advance = step;
+            dots++;
         }
     }
     

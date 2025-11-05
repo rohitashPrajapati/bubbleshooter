@@ -35,7 +35,7 @@ window.onload = function() {
     // Level
     var level = {
         x: 4,           // X position
-        y: 83,          // Y position
+        y: 10,          // Y position (moved up to remove header space)
         width: 0,       // Width, gets calculated
         height: 0,      // Height, gets calculated
         columns: 15,    // Number of tile columns
@@ -105,6 +105,11 @@ window.onload = function() {
     // Aim dots animation
     var aimDotsOffset = 0;     // distance offset along the path (pixels)
     var aimDotsSpeed = 120;    // pixels per second (slower)
+
+    // UI layout caches for floor placement so other renderers can align
+    var uiFloorTop = 0;
+    var uiFloorHeight = 0;
+    var uiBaseLineY = 0;
 
     // Clusters
     var showcluster = false;
@@ -189,6 +194,22 @@ window.onload = function() {
         }
     }
     
+    // Helper: position the shooter and next bubble relative to bottom UI
+    function positionShooterToFloor() {
+        var floorHeight = 2*level.tileheight + 50;
+        var floorTop = canvas.height - floorHeight;
+        var desiredCenterY = floorTop + floorHeight - level.tileheight - 12;
+        player.y = desiredCenterY - level.tileheight/2;
+        // keep next bubble aligned left of shooter
+        player.nextbubble.x = player.x - 2 * level.tilewidth;
+        player.nextbubble.y = player.y;
+        // also reset current flying bubble location if hidden
+        if (!player.bubble.visible) {
+            player.bubble.x = player.x;
+            player.bubble.y = player.y;
+        }
+    }
+
     // Initialize the game
     function init() {
         // Load sounds
@@ -222,6 +243,9 @@ window.onload = function() {
         
         player.nextbubble.x = player.x - 2 * level.tilewidth;
         player.nextbubble.y = player.y;
+
+        // Position shooter to new bottom UI layout before creating bubbles
+        positionShooterToFloor();
         
         // New game
         newGame();
@@ -469,6 +493,10 @@ window.onload = function() {
     }
     
     function getFloorY() {
+        // Prefer the top of the score baseline if available
+        if (uiBaseLineY && uiBaseLineY > 0) {
+            return uiBaseLineY;
+        }
         var yoffset = level.tileheight/2;
         return level.y - 4 + level.height + 4 - yoffset;
     }
@@ -498,12 +526,14 @@ window.onload = function() {
             if (b.y >= contactY) {
                 b.y = contactY;
                 if (!b.bouncedOnce) {
+                    // Award score on first floor contact based on segment, then bounce for effect
+                    var segIdx1 = getSegmentIndex(b.x);
+                    score += getSegmentScore(segIdx1);
                     b.vy = -Math.max(300, Math.abs(b.vy) * 0.45);
                     b.bouncedOnce = true;
                     playSound(sounds.bounce);
                 } else {
-                    var segIdx = getSegmentIndex(b.x);
-                    score += getSegmentScore(segIdx);
+                    // Remove after the bounce without scoring again
                     fallingBubbles.splice(i, 1);
                 }
             }
@@ -810,20 +840,24 @@ window.onload = function() {
         
         // Draw level background
         context.fillStyle = "#151929"; // darker game area background
-        context.fillRect(level.x - 4, level.y - 4, level.width + 8, level.height + 4 - yoffset);
+        context.fillRect(level.x - 4, level.y - 4, level.width + 8, level.height + 18);
         
         // Render tiles
         renderTiles();
         
-        // Draw level bottom
+        // Draw level bottom (anchor to canvas bottom so no blank space remains)
         context.fillStyle = "#101422"; // dark floor band
-        var floorTop = level.y - 4 + level.height + 4 - yoffset - 40;
-        var floorHeight = 2*level.tileheight + 50; // taller floor band
+        var floorHeight = 2*level.tileheight + 50; // floor band height
+        var floorTop = canvas.height - floorHeight; // stick to bottom edge
+        // cache for other renderers
+        uiFloorTop = floorTop;
+        uiFloorHeight = floorHeight;
         context.fillRect(level.x - 4, floorTop, level.width + 8, floorHeight);
 
         // Top baseline across floor (placed above the score area)
         var baseLineHeight = 10;
         var baseLineY = floorTop + 26; // just below labels
+        uiBaseLineY = baseLineY;
         context.fillStyle = "#3b59ff"; // bright blue baseline
         context.fillRect(level.x - 4, baseLineY, level.width + 8, baseLineHeight);
 
@@ -855,11 +889,16 @@ window.onload = function() {
         // Draw score
         context.fillStyle = "#cfd6ff";
         context.font = "18px Verdana";
-        var scorex = level.x + level.width - 150;
-        var scorey = level.y+level.height + level.tileheight - yoffset - 0;
-        drawCenterText("Score:", scorex, scorey, 150);
-        context.font = "24px Verdana";
-        drawCenterText(score, scorex, scorey+30, 150);
+        // Score label near right, big number near floor bottom, right-aligned
+        context.fillStyle = "#cfd6ff";
+        context.font = "18px Verdana";
+        context.textAlign = "right";
+        // Label a little above the baseline
+        context.fillText("Score:", level.x + level.width - 20, uiFloorTop + uiFloorHeight - 50);
+        // Big number sitting on floor bottom line with padding
+        context.font = "bold 34px Verdana";
+        context.fillText(String(score), level.x + level.width - 20, uiFloorTop + uiFloorHeight - 8);
+        context.textAlign = "start";
 
         // Render cluster
         if (showcluster) {
@@ -991,8 +1030,11 @@ window.onload = function() {
     
     // Render the player bubble
     function renderPlayer() {
+        // Align shooter vertically to floor band each frame
+        var desiredCenterY = uiFloorTop + uiFloorHeight - level.tileheight - 12; // keep comfortably above bottom edge
+        player.y = desiredCenterY - level.tileheight/2;
         var centerx = player.x + level.tilewidth/2;
-        var centery = player.y + level.tileheight/2;
+        var centery = desiredCenterY;
         
         // Draw player background circle
         context.fillStyle = "#0e1324";
@@ -1007,6 +1049,9 @@ window.onload = function() {
         renderAimDots(centerx, centery);
         
         // Draw the next bubble
+        // keep next-bubble positioned left of shooter and vertically aligned
+        player.nextbubble.x = player.x - 2 * level.tilewidth;
+        player.nextbubble.y = player.y;
         drawBubble(player.nextbubble.x, player.nextbubble.y, player.nextbubble.tiletype);
         
         // Draw the bubble
@@ -1130,6 +1175,8 @@ window.onload = function() {
         // Init the next bubble and set the current bubble
         nextBubble();
         nextBubble();
+        // Re-apply positioning after bubble generation
+        positionShooterToFloor();
     }
     
     // Create a random level

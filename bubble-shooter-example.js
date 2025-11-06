@@ -111,6 +111,10 @@ window.onload = function() {
     var uiFloorHeight = 0;
     var uiBaseLineY = 0;
 
+    // Slow continuous downward drift of the bubble field
+    var levelFallSpeed = 2;            // pixels per second (very slow)
+    var levelFallOffset = 0;           // 0..rowheight (pixels)
+
     // Clusters
     var showcluster = false;
     var cluster = [];
@@ -125,6 +129,8 @@ window.onload = function() {
     
     // Audio (new)
     var sounds = {};
+    // Master volume (0.0 - 1.0)
+    var soundVolume = 0.08;
     
     // Image loading global variables
     var loadcount = 0;
@@ -170,9 +176,9 @@ window.onload = function() {
         try {
             sounds.pop = new Audio("./sounds/bounce.mp3");
             sounds.bounce = new Audio("./sounds/bounce.mp3");
-            // set volumes as desired
-            sounds.pop.volume = 0.7;
-            sounds.bounce.volume = 0.6;
+            // set volumes via master volume
+            sounds.pop.volume = soundVolume;
+            sounds.bounce.volume = soundVolume;
             // preload
             sounds.pop.load();
             sounds.bounce.load();
@@ -186,11 +192,14 @@ window.onload = function() {
     function playSound(audio) {
         if (!audio) return;
         try {
+            // ensure both the original and clone use current master volume
+            try { audio.volume = soundVolume; } catch(e) {}
             var s = audio.cloneNode(true);
+            try { s.volume = soundVolume; } catch(e2) {}
             s.play();
         } catch (e) {
             // Fallback: try to reset and play (may cut previous sound)
-            try { audio.currentTime = 0; audio.play(); } catch(e2) {}
+            try { audio.volume = soundVolume; audio.currentTime = 0; audio.play(); } catch(e2) {}
         }
     }
     
@@ -304,6 +313,20 @@ window.onload = function() {
         // Animate aiming dots
         aimDotsOffset += dt * aimDotsSpeed;
 
+        // Continuous field drop
+        if (gamestate != gamestates.gameover) {
+            levelFallOffset += dt * levelFallSpeed;
+            while (levelFallOffset >= level.rowheight) {
+                levelFallOffset -= level.rowheight;
+                addBubbles();
+                // Maintain staggered layout: toggle rowoffset when a new row is inserted
+                rowoffset = (rowoffset + 1) % 2;
+                if (checkGameOver()) {
+                    return;
+                }
+            }
+        }
+
         if (gamestate == gamestates.ready) {
             // Game is ready for player input
         } else if (gamestate == gamestates.shootbubble) {
@@ -347,9 +370,10 @@ window.onload = function() {
         }
  
         // Collisions with the top of the level
-        if (player.bubble.y <= level.y) {
+        var topY = level.y + levelFallOffset;
+        if (player.bubble.y <= topY) {
             // Top collision
-            player.bubble.y = level.y;
+            player.bubble.y = topY;
             snapBubble();
             return;
         }
@@ -1130,13 +1154,13 @@ window.onload = function() {
             tilex += level.tilewidth/2;
         }
         
-        var tiley = level.y + row * level.rowheight;
+        var tiley = level.y + levelFallOffset + row * level.rowheight;
         return { tilex: tilex, tiley: tiley };
     }
     
     // Get the closest grid position
     function getGridPosition(x, y) {
-        var gridy = Math.floor((y - level.y) / level.rowheight);
+        var gridy = Math.floor((y - level.y - levelFallOffset) / level.rowheight);
         
         // Check for offset
         var xoffset = 0;
@@ -1165,6 +1189,7 @@ window.onload = function() {
         
         turncounter = 0;
         rowoffset = 0;
+        levelFallOffset = 0;
         
         // Set the gamestate to ready
         setGameState(gamestates.ready);

@@ -24,6 +24,56 @@ window.onload = function() {
     var canvas = document.getElementById("viewport");
     var context = canvas.getContext("2d");
     
+    // Responsive canvas setup for portrait mode
+    function resizeCanvas() {
+        var maxWidth = window.innerWidth;
+        var maxHeight = window.innerHeight;
+        // Portrait aspect ratio: 9:16 or similar
+        var targetAspect = 9 / 16;
+        var canvasWidth, canvasHeight;
+        
+        // Calculate dimensions to fit screen while maintaining aspect
+        if (maxHeight / maxWidth > 1 / targetAspect) {
+            // Screen is taller than target aspect
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth / targetAspect;
+            if (canvasHeight > maxHeight) {
+                canvasHeight = maxHeight;
+                canvasWidth = maxHeight * targetAspect;
+            }
+        } else {
+            // Screen is wider than target aspect
+            canvasHeight = maxHeight;
+            canvasWidth = maxHeight * targetAspect;
+            if (canvasWidth > maxWidth) {
+                canvasWidth = maxWidth;
+                canvasHeight = maxWidth / targetAspect;
+            }
+        }
+        
+        canvas.width = Math.floor(canvasWidth);
+        canvas.height = Math.floor(canvasHeight);
+        canvas.style.width = canvas.width + 'px';
+        canvas.style.height = canvas.height + 'px';
+        
+        // Recalculate level dimensions based on new canvas size
+        var bubbleSize = Math.min(canvas.width / (level.columns + 1), 40);
+        level.tilewidth = bubbleSize;
+        level.tileheight = bubbleSize;
+        level.radius = bubbleSize / 2;
+        level.rowheight = bubbleSize * 0.85;
+        level.width = level.columns * level.tilewidth + level.tilewidth/2;
+        level.height = (level.rows-1) * level.rowheight + level.tileheight;
+        
+        // Reposition player
+        player.x = level.x + level.width/2 - level.tilewidth/2;
+        if (initialized) {
+            positionShooterToFloor();
+        }
+    }
+    
+    // Resize handlers will be set up in init after resizeCanvas is defined
+    
     // Timing and frames per second
     var lastframe = 0;
     var fpstime = 0;
@@ -221,6 +271,9 @@ window.onload = function() {
 
     // Initialize the game
     function init() {
+        // Initial canvas resize for portrait mode
+        resizeCanvas();
+        
         // Load sounds
         loadSounds();
 
@@ -232,6 +285,17 @@ window.onload = function() {
         canvas.addEventListener("mousemove", onMouseMove);
         canvas.addEventListener("mousedown", onMouseDown);
         
+        // Add touch events for mobile
+        canvas.addEventListener("touchmove", onTouchMove, { passive: false });
+        canvas.addEventListener("touchstart", onTouchStart, { passive: false });
+        canvas.addEventListener("touchend", onTouchEnd, { passive: false });
+        
+        // Add resize handlers
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('orientationchange', function() {
+            setTimeout(resizeCanvas, 100);
+        });
+        
         // Initialize the two-dimensional tile array
         for (var i=0; i<level.columns; i++) {
             level.tiles[i] = [];
@@ -241,6 +305,7 @@ window.onload = function() {
             }
         }
         
+        // Level dimensions are set in resizeCanvas, but ensure they're calculated here too
         level.width = level.columns * level.tilewidth + level.tilewidth/2;
         level.height = (level.rows-1) * level.rowheight + level.tileheight;
         
@@ -1354,6 +1419,77 @@ window.onload = function() {
             x: Math.round((e.clientX - rect.left)/(rect.right - rect.left)*canvas.width),
             y: Math.round((e.clientY - rect.top)/(rect.bottom - rect.top)*canvas.height)
         };
+    }
+    
+    // Get touch position (similar to mouse position)
+    function getTouchPos(canvas, e) {
+        var rect = canvas.getBoundingClientRect();
+        var touch = e.touches[0] || e.changedTouches[0];
+        return {
+            x: Math.round((touch.clientX - rect.left)/(rect.right - rect.left)*canvas.width),
+            y: Math.round((touch.clientY - rect.top)/(rect.bottom - rect.top)*canvas.height)
+        };
+    }
+    
+    // Touch event handlers
+    function onTouchMove(e) {
+        e.preventDefault();
+        var pos = getTouchPos(canvas, e);
+        
+        // Get the touch angle (same logic as mouse)
+        var touchangle = radToDeg(Math.atan2((player.y+level.tileheight/2) - pos.y, pos.x - (player.x+level.tilewidth/2)));
+        
+        // Convert range to 0, 360 degrees
+        if (touchangle < 0) {
+            touchangle = 180 + (180 + touchangle);
+        }
+        
+        // Restrict angle to 8, 172 degrees
+        var lbound = 8;
+        var ubound = 172;
+        if (touchangle > 90 && touchangle < 270) {
+            // Left
+            if (touchangle > ubound) {
+                touchangle = ubound;
+            }
+        } else {
+            // Right
+            if (touchangle < lbound || touchangle >= 270) {
+                touchangle = lbound;
+            }
+        }
+        
+        // Set the player angle
+        player.angle = touchangle;
+    }
+    
+    function onTouchStart(e) {
+        e.preventDefault();
+        var pos = getTouchPos(canvas, e);
+        
+        // Update angle on touch start
+        var touchangle = radToDeg(Math.atan2((player.y+level.tileheight/2) - pos.y, pos.x - (player.x+level.tilewidth/2)));
+        if (touchangle < 0) {
+            touchangle = 180 + (180 + touchangle);
+        }
+        var lbound = 8;
+        var ubound = 172;
+        if (touchangle > 90 && touchangle < 270) {
+            if (touchangle > ubound) touchangle = ubound;
+        } else {
+            if (touchangle < lbound || touchangle >= 270) touchangle = lbound;
+        }
+        player.angle = touchangle;
+    }
+    
+    function onTouchEnd(e) {
+        e.preventDefault();
+        // Shoot on touch end
+        if (gamestate == gamestates.ready) {
+            shootBubble();
+        } else if (gamestate == gamestates.gameover) {
+            newGame();
+        }
     }
     
     // Call init to start the game

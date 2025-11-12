@@ -63,7 +63,13 @@ window.onload = function() {
         level.radius = bubbleSize / 2;
         level.rowheight = bubbleSize * 0.85;
         level.width = level.columns * level.tilewidth + level.tilewidth/2;
-        level.height = (level.rows-1) * level.rowheight + level.tileheight;
+        // Calculate floor height for score area
+        var floorHeight = 2 * level.tileheight + 50;
+        var floorTop = canvas.height - floorHeight;
+        // Dynamically calculate rows to fit the available space
+        level.rows = Math.floor((floorTop - level.y) / level.rowheight);
+        // Set level.height so the background reaches the top of the floor
+        level.height = floorTop - level.y;
         
         // Reposition player
         player.x = level.x + level.width/2 - level.tilewidth/2;
@@ -307,7 +313,7 @@ window.onload = function() {
         
         // Level dimensions are set in resizeCanvas, but ensure they're calculated here too
         level.width = level.columns * level.tilewidth + level.tilewidth/2;
-        level.height = (level.rows-1) * level.rowheight + level.tileheight;
+        level.height = level.rows * level.rowheight + (level.tileheight - level.rowheight);
         
         // Init the player
         player.x = level.x + level.width/2 - level.tilewidth/2;
@@ -424,14 +430,14 @@ window.onload = function() {
             // Left edge
             player.bubble.angle = 180 - player.bubble.angle;
             player.bubble.x = level.x;
-+            // play bounce sound
-+            playSound(sounds.bounce);
+            // play bounce sound
+            playSound(sounds.bounce);
         } else if (player.bubble.x + level.tilewidth >= level.x + level.width) {
             // Right edge
             player.bubble.angle = 180 - player.bubble.angle;
             player.bubble.x = level.x + level.width - level.tilewidth;
-+            // play bounce sound
-+            playSound(sounds.bounce);
+            // play bounce sound
+            playSound(sounds.bounce);
         }
  
         // Collisions with the top of the level
@@ -675,8 +681,8 @@ window.onload = function() {
         
             // Set the tile
             level.tiles[gridpos.x][gridpos.y].type = player.bubble.tiletype;
-+            // play pop / attach sound
-+            playSound(sounds.pop);
+            // play pop / attach sound
+            playSound(sounds.pop);
             
             // Check for game over
             if (checkGameOver()) {
@@ -942,6 +948,8 @@ window.onload = function() {
         uiFloorTop = floorTop;
         uiFloorHeight = floorHeight;
         context.fillRect(level.x - 4, floorTop, level.width + 8, floorHeight);
+        // Update level.height so the bubble area background extends to the top of the score floor
+        level.height = floorTop;
 
         // Top baseline across floor (placed above the score area)
         var baseLineHeight = 10;
@@ -1007,13 +1015,13 @@ window.onload = function() {
         
         // Game Over overlay
         if (gamestate == gamestates.gameover) {
-        context.fillStyle = "rgba(0, 0, 0, 0.8)";
-            context.fillRect(level.x - 4, level.y - 4, level.width + 8, level.height + 2 * level.tileheight + 8 - yoffset);
-            
-        context.fillStyle = "#ffffff";
+            context.fillStyle = "rgba(0, 0, 0, 0.8)";
+            // Use floorTop for the overlay height so it matches the game over line
+            context.fillRect(level.x - 4, level.y - 4, level.width + 8, floorTop - level.y + 8);
+            context.fillStyle = "#ffffff";
             context.font = "24px Verdana";
-            drawCenterText("Game Over!", level.x, level.y + level.height / 2 + 10, level.width);
-            drawCenterText("Click to start", level.x, level.y + level.height / 2 + 40, level.width);
+            drawCenterText("Game Over!", level.x, level.y + (floorTop - level.y) / 2 + 10, level.width);
+            drawCenterText("Click to start", level.x, level.y + (floorTop - level.y) / 2 + 40, level.width);
         }
     }
 
@@ -1448,15 +1456,9 @@ window.onload = function() {
         var lbound = 8;
         var ubound = 172;
         if (touchangle > 90 && touchangle < 270) {
-            // Left
-            if (touchangle > ubound) {
-                touchangle = ubound;
-            }
+            if (touchangle > ubound) touchangle = ubound;
         } else {
-            // Right
-            if (touchangle < lbound || touchangle >= 270) {
-                touchangle = lbound;
-            }
+            if (touchangle < lbound || touchangle >= 270) touchangle = lbound;
         }
         
         // Set the player angle

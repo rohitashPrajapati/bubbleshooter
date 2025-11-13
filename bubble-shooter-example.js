@@ -70,7 +70,14 @@ window.onload = function() {
         level.rows = Math.floor((floorTop - level.y) / level.rowheight);
         // Set level.height so the background reaches the top of the floor
         level.height = floorTop - level.y;
-        
+        // Recalculate totalRows and reinitialize tiles
+        totalRows = level.rows + 1;
+        for (var i=0; i<level.columns; i++) {
+            if (!level.tiles[i]) level.tiles[i] = [];
+            for (var j=level.tiles[i].length; j<totalRows; j++) {
+                level.tiles[i][j] = new Tile(i, j, -1, 0);
+            }
+        }
         // Reposition player
         player.x = level.x + level.width/2 - level.tilewidth/2;
         if (initialized) {
@@ -90,18 +97,19 @@ window.onload = function() {
     
     // Level
     var level = {
-        x: 4,           // X position
-        y: 10,          // Y position (moved up to remove header space)
-        width: 0,       // Width, gets calculated
-        height: 0,      // Height, gets calculated
-        columns: 15,    // Number of tile columns
-        rows: 14,       // Number of tile rows
-        tilewidth: 40,  // Visual width of a tile
-        tileheight: 40, // Visual height of a tile
-        rowheight: 34,  // Height of a row
-        radius: 20,     // Bubble collision radius
-        tiles: []       // The two-dimensional tile array
+        x: 4,
+        y: 10,
+        width: 0,
+        height: 0,
+        columns: 15,
+        rows: 14, // Number of visible tile rows
+        tilewidth: 40,
+        tileheight: 40,
+        rowheight: 34,
+        radius: 20,
+        tiles: []
     };
+    var totalRows = level.rows + 1; // Always keep one extra hidden row
 
     // Define a tile class
     var Tile = function(x, y, type, shift) {
@@ -168,7 +176,7 @@ window.onload = function() {
     var uiBaseLineY = 0;
 
     // Slow continuous downward drift of the bubble field
-    var levelFallSpeed = 2;            // pixels per second (very slow)
+    var levelFallSpeed = 13;            // pixels per second (increase for smoother movement)
     var levelFallOffset = 0;           // 0..rowheight (pixels)
 
     // Clusters
@@ -178,6 +186,11 @@ window.onload = function() {
     // Bouncing fallen bubbles
     var fallingBubbles = [];
     var gravity = 1800;
+    // Scattering effect parameters
+    var scatterMinVX = 120; // minimum horizontal velocity (pixels/sec)
+    var scatterMaxVX = 420; // maximum horizontal velocity (pixels/sec)
+    var scatterBounceDamping = 0.45; // vertical bounce damping
+    var scatterBounceSpread = 0.25; // how much horizontal velocity increases after bounce
     
     // Images
     var images = [];
@@ -305,8 +318,7 @@ window.onload = function() {
         // Initialize the two-dimensional tile array
         for (var i=0; i<level.columns; i++) {
             level.tiles[i] = [];
-            for (var j=0; j<level.rows; j++) {
-                // Define a tile type and a shift parameter for animation
+            for (var j=0; j<totalRows; j++) {
                 level.tiles[i][j] = new Tile(i, j, 0, 0);
             }
         }
@@ -384,17 +396,16 @@ window.onload = function() {
         // Animate aiming dots
         aimDotsOffset += dt * aimDotsSpeed;
 
-        // Continuous field drop
+        // Smooth grid drop (belt animation)
         if (gamestate != gamestates.gameover) {
             levelFallOffset += dt * levelFallSpeed;
-            while (levelFallOffset >= level.rowheight) {
+            if (levelFallOffset >= level.rowheight) {
                 levelFallOffset -= level.rowheight;
                 addBubbles();
-                // Maintain staggered layout: toggle rowoffset when a new row is inserted
                 rowoffset = (rowoffset + 1) % 2;
-                if (checkGameOver()) {
-                    return;
-                }
+            }
+            if (checkGameOver()) {
+                return;
             }
         }
 
@@ -494,14 +505,16 @@ window.onload = function() {
                 for (var c=0; c<cluster.length; c++) {
                     var ct = cluster[c];
                     var ccoord = getTileCoordinate(ct.x, ct.y);
+                    // Give each bubble a random horizontal velocity for scatter
+                    var scatterVX = (Math.random() < 0.5 ? -1 : 1) * (scatterMinVX + Math.random() * (scatterMaxVX - scatterMinVX));
                     fallingBubbles.push({
                         x: ccoord.tilex + level.tilewidth/2,
                         y: ccoord.tiley + level.tileheight/2,
                         r: level.radius,
                         type: ct.type,
                         vy: 0,
-                        bouncedOnce: false,
-                        // tiny random horizontal offset so multiple don't perfectly overlap visually
+                        vx: scatterVX,
+                        bouncedOnce: false
                     });
                     // Remove from grid immediately
                     ct.type = -1;
@@ -509,22 +522,22 @@ window.onload = function() {
                     ct.alpha = 1;
                 }
             }
-            
             // Find floating clusters
             floatingclusters = findFloatingClusters();
-            
             if (floatingclusters.length > 0) {
                 // Convert floating clusters into independent falling bubbles with bounce
                 for (var i=0; i<floatingclusters.length; i++) {
                     for (var j=0; j<floatingclusters[i].length; j++) {
                         var tile = floatingclusters[i][j];
                         var coord = getTileCoordinate(tile.x, tile.y);
+                        var scatterVX = (Math.random() < 0.5 ? -1 : 1) * (scatterMinVX + Math.random() * (scatterMaxVX - scatterMinVX));
                         fallingBubbles.push({
                             x: coord.tilex + level.tilewidth/2 + (Math.random()*10-5),
                             y: coord.tiley + level.tileheight/2,
                             r: level.radius,
                             type: tile.type,
                             vy: 0,
+                            vx: scatterVX,
                             bouncedOnce: false
                         });
                         // Remove from grid immediately
@@ -615,7 +628,10 @@ window.onload = function() {
         var floorY = getFloorY();
         for (var i = fallingBubbles.length - 1; i >= 0; i--) {
             var b = fallingBubbles[i];
+            // Add horizontal scatter movement
+            if (typeof b.vx === 'undefined') b.vx = 0;
             b.vy += gravity * dt;
+            b.x += b.vx * dt;
             b.y += b.vy * dt;
             var contactY = floorY - b.r;
             if (b.y >= contactY) {
@@ -624,7 +640,9 @@ window.onload = function() {
                     // Award score on first floor contact based on segment, then bounce for effect
                     var segIdx1 = getSegmentIndex(b.x);
                     score += getSegmentScore(segIdx1);
-                    b.vy = -Math.max(300, Math.abs(b.vy) * 0.45);
+                    b.vy = -Math.max(300, Math.abs(b.vy) * scatterBounceDamping);
+                    // Add more scatter to vx after bounce
+                    b.vx = b.vx * (1 + scatterBounceSpread * (Math.random() - 0.5));
                     b.bouncedOnce = true;
                     playSound(sounds.bounce);
                 } else {
@@ -733,18 +751,17 @@ window.onload = function() {
     }
     
     function addBubbles() {
-        // Move the rows downwards
+        // Shift all rows down
         for (var i=0; i<level.columns; i++) {
-            for (var j=0; j<level.rows-1; j++) {
-                level.tiles[i][level.rows-1-j].type = level.tiles[i][level.rows-1-j-1].type;
+            for (var j=totalRows-1; j>0; j--) {
+                level.tiles[i][j].type = level.tiles[i][j-1].type;
             }
         }
-        
-        // Add a new row of bubbles at the top
+        // Add a new hidden row at the top
         for (var i=0; i<level.columns; i++) {
-            // Add random, existing, colors
             level.tiles[i][0].type = getExistingColor();
         }
+        // The newRowAnimating flag is set in the update function before calling this
     }
     
     // Find the remaining colors
@@ -1086,32 +1103,27 @@ window.onload = function() {
     
     // Render tiles
     function renderTiles() {
-        // Top to bottom
-        for (var j=0; j<level.rows; j++) {
-            for (var i=0; i<level.columns; i++) {
-                // Get the tile
+        // Render only rows that are at least partially visible in the game area
+        for (var j = 0; j < totalRows; j++) {
+            for (var i = 0; i < level.columns; i++) {
                 var tile = level.tiles[i][j];
-            
-                // Get the shift of the tile for animation
                 var shift = tile.shift;
-                
-                // Calculate the tile coordinates
                 var coord = getTileCoordinate(i, j);
-                
-                // Check if there is a tile present
-                if (tile.type >= 0) {
-                    // Support transparency
-                    context.save();
-                    context.globalAlpha = tile.alpha;
-                    
-                    // Draw the tile using the color
-                    drawBubble(coord.tilex, coord.tiley + shift, tile.type);
-                    
-                    context.restore();
+                var y = coord.tiley + shift;
+                // Only render if at least part of the tile is visible in the game area
+                if (y + level.tileheight > level.y && y < level.y + level.height) {
+                    if (tile.type >= 0) {
+                        context.save();
+                        context.globalAlpha = tile.alpha;
+                        drawBubble(coord.tilex, y, tile.type);
+                        context.restore();
+                    }
                 }
             }
         }
     }
+
+    
     
     // Render cluster
     function renderCluster(cluster, r, g, b) {
@@ -1221,12 +1233,10 @@ window.onload = function() {
     // Get the tile coordinate
     function getTileCoordinate(column, row) {
         var tilex = level.x + column * level.tilewidth;
-        
-        // X offset for odd or even rows
         if ((row + rowoffset) % 2) {
             tilex += level.tilewidth/2;
         }
-        
+        // Animate the entire grid together, including the top row
         var tiley = level.y + levelFallOffset + row * level.rowheight;
         return { tilex: tilex, tiley: tiley };
     }
@@ -1280,15 +1290,12 @@ window.onload = function() {
     // Create a random level
     function createLevel() {
         // Create a level with random tiles
-        for (var j=0; j<level.rows; j++) {
+        for (var j=0; j<totalRows; j++) { // initialize all rows including hidden
             var randomtile = randRange(0, bubblecolors-1);
             var count = 0;
             for (var i=0; i<level.columns; i++) {
                 if (count >= 2) {
-                    // Change the random tile
                     var newtile = randRange(0, bubblecolors-1);
-                    
-                    // Make sure the new tile is different from the previous tile
                     if (newtile == randomtile) {
                         newtile = (newtile + 1) % bubblecolors;
                     }
@@ -1296,8 +1303,8 @@ window.onload = function() {
                     count = 0;
                 }
                 count++;
-                
-                if (j < level.rows/2) {
+                // Fill visible rows and hidden row with bubbles
+                if (j < level.rows/2 || j == totalRows-1) {
                     level.tiles[i][j].type = randomtile;
                 } else {
                     level.tiles[i][j].type = -1;

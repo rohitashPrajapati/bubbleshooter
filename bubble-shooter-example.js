@@ -57,7 +57,7 @@ window.onload = function() {
         canvas.style.height = canvas.height + 'px';
         
         // Recalculate level dimensions based on new canvas size
-        var bubbleSize = Math.min(canvas.width / (level.columns + 1), 40);
+    var bubbleSize = Math.min(canvas.width / (level.columns + 1), 44); // Increased max size to 44
         level.tilewidth = bubbleSize;
         level.tileheight = bubbleSize;
         level.radius = bubbleSize / 2;
@@ -101,12 +101,12 @@ window.onload = function() {
         y: 10,
         width: 0,
         height: 0,
-        columns: 15,
+    columns: 13, // Reduced from 15 to 13 for larger bubbles
         rows: 14, // Number of visible tile rows
-        tilewidth: 40,
-        tileheight: 40,
-        rowheight: 34,
-        radius: 20,
+    tilewidth: 44, // Increased by 10% from 40
+    tileheight: 44, // Increased by 10% from 40
+    rowheight: 37.4, // Increased by 10% from 34
+    radius: 22, // Increased by 10% from 20
         tiles: []
     };
     var totalRows = level.rows + 1; // Always keep one extra hidden row

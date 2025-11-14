@@ -1262,7 +1262,7 @@ window.onload = function() {
             return;
         
         // Draw the bubble sprite
-        context.drawImage(bubbleimage, index * 40, 0, 40, 40, x, y, level.tilewidth, level.tileheight);
+        context.drawImage(bubbleimage, index * 130, 0, 130, 130, x, y, level.tilewidth, level.tileheight);
     }
     
     // Start a new game

@@ -1034,8 +1034,21 @@ window.onload = function() {
 
     function renderFallingBubbles() {
         if (fallingBubbles.length === 0) return;
+        var floorY = getFloorY();
         for (var i=0; i<fallingBubbles.length; i++) {
             var b = fallingBubbles[i];
+            // Draw bounce shadow if bubble is at the floor
+            if (Math.abs(b.y - (floorY - b.r)) < 2) {
+                context.save();
+                context.globalAlpha = 0.35;
+                context.beginPath();
+                context.arc(b.x - level.tilewidth/2 + level.tilewidth/2, floorY - b.r + level.tileheight/2 + 4, level.radius * 0.9, 0, Math.PI*2, false);
+                context.fillStyle = "#fff";
+                context.shadowColor = "#fff";
+                context.shadowBlur = 12;
+                context.fill();
+                context.restore();
+            }
             drawBubble(b.x - level.tilewidth/2, b.y - level.tileheight/2, b.type);
         }
     }

@@ -28,49 +28,38 @@ window.onload = function() {
     function resizeCanvas() {
         var maxWidth = window.innerWidth;
         var maxHeight = window.innerHeight;
-        // Portrait aspect ratio: 9:16 or similar
-        var targetAspect = 9 / 16;
+        var targetAspect = 11 / 16;
         var canvasWidth, canvasHeight;
-        
-        // Calculate dimensions to fit screen while maintaining aspect
-        if (maxHeight / maxWidth > 1 / targetAspect) {
-            // Screen is taller than target aspect
-            canvasWidth = maxWidth;
-            canvasHeight = maxWidth / targetAspect;
-            if (canvasHeight > maxHeight) {
-                canvasHeight = maxHeight;
-                canvasWidth = maxHeight * targetAspect;
-            }
-        } else {
-            // Screen is wider than target aspect
+        if (maxWidth / maxHeight > targetAspect) {
             canvasHeight = maxHeight;
             canvasWidth = maxHeight * targetAspect;
             if (canvasWidth > maxWidth) {
                 canvasWidth = maxWidth;
                 canvasHeight = maxWidth / targetAspect;
             }
+        } else {
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth / targetAspect;
+            if (canvasHeight > maxHeight) {
+                canvasHeight = maxHeight;
+                canvasWidth = maxHeight * targetAspect;
+            }
         }
-        
         canvas.width = Math.floor(canvasWidth);
         canvas.height = Math.floor(canvasHeight);
         canvas.style.width = canvas.width + 'px';
         canvas.style.height = canvas.height + 'px';
-        
-        // Recalculate level dimensions based on new canvas size
-    var bubbleSize = Math.min(canvas.width / (level.columns + 1), 44); // Increased max size to 44
-        level.tilewidth = bubbleSize;
-        level.tileheight = bubbleSize;
-        level.radius = bubbleSize / 2;
-        level.rowheight = bubbleSize * 0.85;
-        level.width = level.columns * level.tilewidth + level.tilewidth/2;
-        // Calculate floor height for score area
+        // Bubble sizing and grid fit
+        var bubbleSize = Math.min(canvas.width / (level.columns + 0.5), canvas.height / (level.rows + 2));
+        level.tilewidth = bubbleSize - bubbleGap;
+        level.tileheight = bubbleSize - bubbleGap;
+        level.radius = (bubbleSize - bubbleGap) / 2;
+        level.rowheight = level.tileheight * 0.95;
+        level.width = level.columns * (level.tilewidth + bubbleGap) + (level.tilewidth + bubbleGap) / 2;
         var floorHeight = 2 * level.tileheight + 50;
         var floorTop = canvas.height - floorHeight;
-        // Dynamically calculate rows to fit the available space
-        level.rows = Math.floor((floorTop - level.y) / level.rowheight);
-        // Set level.height so the background reaches the top of the floor
+        level.rows = Math.floor((floorTop - level.y) / (level.rowheight + bubbleGap));
         level.height = floorTop - level.y;
-        // Recalculate totalRows and reinitialize tiles
         totalRows = level.rows + 1;
         for (var i=0; i<level.columns; i++) {
             if (!level.tiles[i]) level.tiles[i] = [];
@@ -78,7 +67,6 @@ window.onload = function() {
                 level.tiles[i][j] = new Tile(i, j, -1, 0);
             }
         }
-        // Reposition player
         player.x = level.x + level.width/2 - level.tilewidth/2;
         if (initialized) {
             positionShooterToFloor();
@@ -103,13 +91,15 @@ window.onload = function() {
         height: 0,
     columns: 13, // Reduced from 15 to 13 for larger bubbles
         rows: 14, // Number of visible tile rows
-    tilewidth: 44, // Increased by 10% from 40
-    tileheight: 44, // Increased by 10% from 40
-    rowheight: 37.4, // Increased by 10% from 34
-    radius: 22, // Increased by 10% from 20
+    tilewidth: 48.4, // Increased by 10% from 44, minus gap
+    tileheight: 48.4, // Increased by 10% from 44, minus gap
+    rowheight: 41.14, // Increased by 10% from 37.4, minus gap
+    radius: 24.2, // Increased by 10% from 22, minus gap
         tiles: []
     };
     var totalRows = level.rows + 1; // Always keep one extra hidden row
+
+    const bubbleGap = 1;
 
     // Define a tile class
     var Tile = function(x, y, type, shift) {
@@ -150,7 +140,7 @@ window.onload = function() {
                             [[1, 0], [1, 1], [0, 1], [-1, 0], [0, -1], [1, -1]]];  // Odd row tiles
     
     // Number of different colors
-    var bubblecolors = 7;
+    var bubblecolors = 3;
     
     // Game states
     var gamestates = { init: 0, ready: 1, shootbubble: 2, removecluster: 3, gameover: 4 };
@@ -243,8 +233,8 @@ window.onload = function() {
     function loadSounds() {
         // Put your sound files at: ./sounds/pop.wav and ./sounds/bounce.wav (or change paths)
         try {
-            sounds.pop = new Audio("./sounds/bounce.mp3");
-            sounds.bounce = new Audio("./sounds/bounce.mp3");
+            sounds.pop = new Audio("./sounds/pop_light.mp3");
+            sounds.bounce = new Audio("./sounds/ball_bounce.mp3");
             // set volumes via master volume
             sounds.pop.volume = soundVolume;
             sounds.bounce.volume = soundVolume;
@@ -324,8 +314,8 @@ window.onload = function() {
         }
         
         // Level dimensions are set in resizeCanvas, but ensure they're calculated here too
-        level.width = level.columns * level.tilewidth + level.tilewidth/2;
-        level.height = level.rows * level.rowheight + (level.tileheight - level.rowheight);
+        level.width = level.columns * (level.tilewidth + bubbleGap) + (level.tilewidth + bubbleGap) / 2;
+        level.height = level.rows * (level.rowheight + bubbleGap) + (level.tileheight - level.rowheight);
         
         // Init the player
         player.x = level.x + level.width/2 - level.tilewidth/2;
@@ -1033,12 +1023,12 @@ window.onload = function() {
         // Game Over overlay
         if (gamestate == gamestates.gameover) {
             context.fillStyle = "rgba(0, 0, 0, 0.8)";
-            // Use floorTop for the overlay height so it matches the game over line
-            context.fillRect(level.x - 4, level.y - 4, level.width + 8, floorTop - level.y + 8);
+            // Cover the entire game area including the scoring floor
+            context.fillRect(level.x - 4, level.y - 4, level.width + 8, canvas.height - level.y + 8);
             context.fillStyle = "#ffffff";
             context.font = "24px Verdana";
-            drawCenterText("Game Over!", level.x, level.y + (floorTop - level.y) / 2 + 10, level.width);
-            drawCenterText("Click to start", level.x, level.y + (floorTop - level.y) / 2 + 40, level.width);
+            drawCenterText("Game Over!", level.x, level.y + (canvas.height - level.y) / 2 + 10, level.width);
+            drawCenterText("Click to start", level.x, level.y + (canvas.height - level.y) / 2 + 40, level.width);
         }
     }
 
@@ -1232,25 +1222,25 @@ window.onload = function() {
     
     // Get the tile coordinate
     function getTileCoordinate(column, row) {
-        var tilex = level.x + column * level.tilewidth;
+        var tilex = level.x + column * (level.tilewidth + bubbleGap);
         if ((row + rowoffset) % 2) {
-            tilex += level.tilewidth/2;
+            tilex += (level.tilewidth + bubbleGap) / 2;
         }
         // Animate the entire grid together, including the top row
-        var tiley = level.y + levelFallOffset + row * level.rowheight;
+        var tiley = level.y + levelFallOffset + row * (level.rowheight + bubbleGap);
         return { tilex: tilex, tiley: tiley };
     }
     
     // Get the closest grid position
     function getGridPosition(x, y) {
-        var gridy = Math.floor((y - level.y - levelFallOffset) / level.rowheight);
+        var gridy = Math.floor((y - level.y - levelFallOffset) / (level.rowheight + bubbleGap));
         
         // Check for offset
         var xoffset = 0;
         if ((gridy + rowoffset) % 2) {
-            xoffset = level.tilewidth / 2;
+            xoffset = (level.tilewidth + bubbleGap) / 2;
         }
-        var gridx = Math.floor(((x - xoffset) - level.x) / level.tilewidth);
+        var gridx = Math.floor(((x - xoffset) - level.x) / (level.tilewidth + bubbleGap));
         
         return { x: gridx, y: gridy };
     }

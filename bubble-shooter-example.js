@@ -179,7 +179,7 @@ window.onload = function() {
     // Scattering effect parameters
     var scatterMinVX = 120; // minimum horizontal velocity (pixels/sec)
     var scatterMaxVX = 420; // maximum horizontal velocity (pixels/sec)
-    var scatterBounceDamping = 0.45; // vertical bounce damping
+    var scatterBounceDamping = 0.85; // vertical bounce damping (higher for more elastic bounce)
     var scatterBounceSpread = 0.25; // how much horizontal velocity increases after bounce
     
     // Images
@@ -1037,16 +1037,17 @@ window.onload = function() {
         var floorY = getFloorY();
         for (var i=0; i<fallingBubbles.length; i++) {
             var b = fallingBubbles[i];
-            // Draw bounce shadow if bubble is at the floor
+            // Draw white blur disk shadow if bubble is at the floor
             if (Math.abs(b.y - (floorY - b.r)) < 2) {
                 context.save();
-                context.globalAlpha = 0.35;
+                context.globalAlpha = 0.85; // Increased opacity
+                context.filter = 'blur(8px)';
                 context.beginPath();
-                context.arc(b.x - level.tilewidth/2 + level.tilewidth/2, floorY - b.r + level.tileheight/2 + 4, level.radius * 0.9, 0, Math.PI*2, false);
-                context.fillStyle = "#fff";
-                context.shadowColor = "#fff";
-                context.shadowBlur = 12;
+                context.arc(b.x, floorY + 8, b.r * 1.2, 0, Math.PI * 2);
+                context.fillStyle = 'white';
                 context.fill();
+                context.filter = 'none';
+                context.globalAlpha = 1.0;
                 context.restore();
             }
             drawBubble(b.x - level.tilewidth/2, b.y - level.tileheight/2, b.type);

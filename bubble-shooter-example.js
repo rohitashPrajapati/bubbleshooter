@@ -168,7 +168,9 @@ window.onload = function() {
     var uiBaseLineY = 0;
 
     // Slow continuous downward drift of the bubble field
-    var levelFallSpeed = 13;            // pixels per second (increase for smoother movement)
+    var baseLevelFallSpeed = 13;        // base speed (pixels/sec)
+    var minLevelFallSpeed = 0.7;        // minimum speed near floor (pixels/sec)
+    var levelFallSpeed = baseLevelFallSpeed; // current speed
     var levelFallOffset = 0;           // 0..rowheight (pixels)
 
     // Clusters
@@ -399,6 +401,15 @@ window.onload = function() {
 
         // Smooth grid drop (belt animation)
         if (gamestate != gamestates.gameover) {
+            // Calculate distance from first row to floor
+            var firstRowY = level.y + levelFallOffset;
+            var floorY = getFloorY();
+            var distanceToFloor = floorY - firstRowY;
+            var maxDistance = canvas.height - level.y; // maximum possible distance
+            // Gradient: speed decreases as distanceToFloor decreases
+            var speedRatio = Math.max(0, Math.min(1, distanceToFloor / maxDistance));
+            // Interpolate between base and min speed
+            levelFallSpeed = minLevelFallSpeed + (baseLevelFallSpeed - minLevelFallSpeed) * speedRatio;
             levelFallOffset += dt * levelFallSpeed;
             if (levelFallOffset >= level.rowheight) {
                 levelFallOffset -= level.rowheight;

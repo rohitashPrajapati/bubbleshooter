@@ -235,14 +235,23 @@ window.onload = function() {
     function loadSounds() {
         // Put your sound files at: ./sounds/pop.wav and ./sounds/bounce.wav (or change paths)
         try {
-            sounds.pop = new Audio("./sounds/pop_light.mp3");
-            sounds.bounce = new Audio("./sounds/ball_bounce.mp3");
+            sounds.stick = new Audio("./sounds/ball_stick.mp3"); // stick to another ball
+            sounds.pop = new Audio("./sounds/pop_light.mp3"); // popping cluster
+            sounds.bounce = new Audio("./sounds/ball_bounce.mp3"); // wall bounce
+            sounds.warning = new Audio("./sounds/warning.mp3"); // warning near game over
+            sounds.gameover = new Audio("./sounds/gameover.mp3"); // game over
             // set volumes via master volume
+            sounds.stick.volume = soundVolume;
             sounds.pop.volume = soundVolume;
             sounds.bounce.volume = soundVolume;
+            sounds.warning.volume = soundVolume;
+            sounds.gameover.volume = soundVolume;
             // preload
+            sounds.stick.load();
             sounds.pop.load();
             sounds.bounce.load();
+            sounds.warning.load();
+            sounds.gameover.load();
         } catch(e) {
             // ignore if audio can't be created
             sounds = {};
@@ -491,9 +500,10 @@ window.onload = function() {
             
             // Add cluster score
             score += cluster.length * 100;
-
-            // Convert matched cluster itself to falling bubbles (bounce instead of fade)
+            // Play pop sound when popping cluster
             if (cluster.length > 0) {
+                playSound(sounds.pop);
+                // Convert matched cluster itself to falling bubbles (bounce instead of fade)
                 for (var c=0; c<cluster.length; c++) {
                     var ct = cluster[c];
                     var ccoord = getTileCoordinate(ct.x, ct.y);
@@ -686,13 +696,10 @@ window.onload = function() {
 
         // Add the tile to the grid
         if (addtile) {
-            // Hide the player bubble
             player.bubble.visible = false;
-        
-            // Set the tile
             level.tiles[gridpos.x][gridpos.y].type = player.bubble.tiletype;
-            // play pop / attach sound
-            playSound(sounds.pop);
+            // play stick sound when bubble attaches
+            playSound(sounds.stick);
             
             // Check for game over
             if (checkGameOver()) {
@@ -728,17 +735,23 @@ window.onload = function() {
     }
     
     function checkGameOver() {
-        // Check for game over
+        var warningPlayed = false;
         for (var i=0; i<level.columns; i++) {
             // Check if there are bubbles in the bottom row
             if (level.tiles[i][level.rows-1].type != -1) {
+                // If game is not yet over, play warning sound once
+                if (!warningPlayed && gamestate != gamestates.gameover) {
+                    playSound(sounds.warning);
+                    warningPlayed = true;
+                }
                 // Game over
                 nextBubble();
                 setGameState(gamestates.gameover);
+                // Play game over sound
+                playSound(sounds.gameover);
                 return true;
             }
         }
-        
         return false;
     }
     

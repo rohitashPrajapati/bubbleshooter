@@ -140,7 +140,9 @@ window.onload = function() {
                             [[1, 0], [1, 1], [0, 1], [-1, 0], [0, -1], [1, -1]]];  // Odd row tiles
     
     // Number of different colors
-    var bubblecolors = 3;
+    var bubblecolors = 7;
+    // Number of easy rows before increasing color complexity
+    var easyRows = 12;
     
     // Game states
     var gamestates = { init: 0, ready: 1, shootbubble: 2, removecluster: 3, gameover: 4 };
@@ -748,8 +750,25 @@ window.onload = function() {
             }
         }
         // Add a new hidden row at the top
+        var currentRowCount = 0;
+        // Count non-hidden rows
+        for (var j = 0; j < totalRows; j++) {
+            if (level.tiles[0][j].type !== -1) currentRowCount++;
+        }
+        var colorCount = bubblecolors;
+        if (currentRowCount < easyRows) {
+            colorCount = Math.min(3, bubblecolors);
+        } else if (currentRowCount < easyRows + 5) {
+            colorCount = Math.min(4, bubblecolors);
+        } else if (currentRowCount < easyRows + 10) {
+            colorCount = Math.min(5, bubblecolors);
+        } else if (currentRowCount < easyRows + 15) {
+            colorCount = Math.min(6, bubblecolors);
+        } else {
+            colorCount = bubblecolors;
+        }
         for (var i=0; i<level.columns; i++) {
-            level.tiles[i][0].type = getExistingColor();
+            level.tiles[i][0].type = randRange(0, colorCount-1);
         }
         // The newRowAnimating flag is set in the update function before calling this
     }
@@ -1295,13 +1314,25 @@ window.onload = function() {
     function createLevel() {
         // Create a level with random tiles
         for (var j=0; j<totalRows; j++) { // initialize all rows including hidden
-            var randomtile = randRange(0, bubblecolors-1);
+            var colorCount = bubblecolors;
+            var groupSize = 3;
+            if (j < easyRows) {
+                colorCount = Math.min(3, bubblecolors); // at least 3 colors for easy rows
+                groupSize = 4; // group bubbles for easier bursting
+            } else if (j < easyRows + 10) {
+                colorCount = Math.min(4, bubblecolors); // increase to 4 or more colors
+                groupSize = 2;
+            } else {
+                colorCount = bubblecolors; // use all available colors (7)
+                groupSize = 1; // fully random
+            }
+            var randomtile = randRange(0, colorCount-1);
             var count = 0;
             for (var i=0; i<level.columns; i++) {
-                if (count >= 2) {
-                    var newtile = randRange(0, bubblecolors-1);
+                if (count >= groupSize) {
+                    var newtile = randRange(0, colorCount-1);
                     if (newtile == randomtile) {
-                        newtile = (newtile + 1) % bubblecolors;
+                        newtile = (newtile + 1) % colorCount;
                     }
                     randomtile = newtile;
                     count = 0;
@@ -1326,10 +1357,24 @@ window.onload = function() {
         player.bubble.y = player.y;
         player.bubble.visible = true;
         
-        // Get a random type from the existing colors
-        var nextcolor = getExistingColor();
-        
-        // Set the next bubble
+        // Determine current row count
+        var currentRowCount = 0;
+        for (var j = 0; j < totalRows; j++) {
+            if (level.tiles[0][j].type !== -1) currentRowCount++;
+        }
+        var colorCount = bubblecolors;
+        if (currentRowCount < easyRows) {
+            colorCount = Math.min(3, bubblecolors);
+        } else if (currentRowCount < easyRows + 5) {
+            colorCount = Math.min(4, bubblecolors);
+        } else if (currentRowCount < easyRows + 10) {
+            colorCount = Math.min(5, bubblecolors);
+        } else if (currentRowCount < easyRows + 15) {
+            colorCount = Math.min(6, bubblecolors);
+        } else {
+            colorCount = bubblecolors;
+        }
+        var nextcolor = randRange(0, colorCount-1);
         player.nextbubble.tiletype = nextcolor;
     }
     

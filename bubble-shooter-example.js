@@ -50,12 +50,18 @@ window.onload = function() {
         canvas.style.width = canvas.width + 'px';
         canvas.style.height = canvas.height + 'px';
         // Bubble sizing and grid fit
-        var bubbleSize = Math.min(canvas.width / (level.columns + 0.5), canvas.height / (level.rows + 2));
+        // Adjust grid width and center horizontally to avoid right edge clipping
+        var bubbleSize = Math.min(
+            (canvas.width - bubbleGap * 2) / (level.columns + 0.5),
+            canvas.height / (level.rows + 2)
+        );
         level.tilewidth = bubbleSize - bubbleGap;
         level.tileheight = bubbleSize - bubbleGap;
         level.radius = (bubbleSize - bubbleGap) / 2;
         level.rowheight = level.tileheight * 0.95;
         level.width = level.columns * (level.tilewidth + bubbleGap) + (level.tilewidth + bubbleGap) / 2;
+        // Center grid horizontally with left and right margin
+        level.x = Math.floor((canvas.width - level.width) / 2);
         var floorHeight = 2 * level.tileheight + 50;
         var floorTop = canvas.height - floorHeight;
         level.rows = Math.floor((floorTop - level.y) / (level.rowheight + bubbleGap));

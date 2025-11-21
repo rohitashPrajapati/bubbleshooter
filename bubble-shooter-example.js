@@ -660,17 +660,17 @@ window.onload = function() {
             var contactY = floorY - b.r;
             if (b.y >= contactY) {
                 b.y = contactY;
-                if (!b.bouncedOnce) {
-                    // Award score on first floor contact based on segment, then bounce for effect
+                // Multiple bounce effect
+                if (typeof b.bounceCount === 'undefined') b.bounceCount = 0;
+                if (b.bounceCount < 3) { // Allow up to 3 bounces
                     var segIdx1 = getSegmentIndex(b.x);
-                    score += getSegmentScore(segIdx1);
-                    b.vy = -Math.max(300, Math.abs(b.vy) * scatterBounceDamping);
-                    // Add more scatter to vx after bounce
+                    if (b.bounceCount === 0) score += getSegmentScore(segIdx1); // Only score on first contact
+                    b.vy = -Math.max(220, Math.abs(b.vy) * scatterBounceDamping); // Lower bounce height for realism
                     b.vx = b.vx * (1 + scatterBounceSpread * (Math.random() - 0.5));
-                    b.bouncedOnce = true;
+                    b.bounceCount++;
                     playSound(sounds.bounce);
                 } else {
-                    // Remove after the bounce without scoring again
+                    // Remove after last bounce
                     fallingBubbles.splice(i, 1);
                 }
             }

@@ -54,7 +54,7 @@ window.onload = function() {
         var bubbleSize = Math.min(
             (canvas.width - bubbleGap * 2) / (level.columns + 0.5),
             canvas.height / (level.rows + 2)
-        );
+        ) * bubbleSizeScale; // Use global scale
         level.tilewidth = bubbleSize - bubbleGap;
         level.tileheight = bubbleSize - bubbleGap;
         level.radius = (bubbleSize - bubbleGap) / 2;
@@ -95,12 +95,12 @@ window.onload = function() {
         y: 10,
         width: 0,
         height: 0,
-    columns: 13, // Reduced from 15 to 13 for larger bubbles
+        columns: 12, // Keep at 9 for fit
         rows: 14, // Number of visible tile rows
-    tilewidth: 48.4, // Increased by 10% from 44, minus gap
-    tileheight: 48.4, // Increased by 10% from 44, minus gap
-    rowheight: 41.14, // Increased by 10% from 37.4, minus gap
-    radius: 24.2, // Increased by 10% from 22, minus gap
+        tilewidth: 48.4 * bubbleSizeScale,
+        tileheight: 48.4 * bubbleSizeScale,
+        rowheight: 41.14 * bubbleSizeScale,
+        radius: 24.2 * bubbleSizeScale,
         tiles: []
     };
     var totalRows = level.rows + 1; // Always keep one extra hidden row
@@ -161,6 +161,9 @@ window.onload = function() {
     
     var turncounter = 0;
     var rowoffset = 0;
+
+    // Bubble size scale factor (global)
+    var bubbleSizeScale = 1.0; //increase this in percentage like for 5% do it 1.05
     
     // Animation variables
     var animationstate = 0;
@@ -1580,7 +1583,7 @@ window.onload = function() {
             newGame();
         }
     }
-    
+
     // Call init to start the game
     init();
 };

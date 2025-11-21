@@ -92,10 +92,10 @@ window.onload = function() {
     // Level
     var level = {
         x: 4,
-        y: 10,
+        y: 0, // Start grid at top
         width: 0,
         height: 0,
-        columns: 12, // Keep at 9 for fit
+        columns: 12, // Safe fit for bubbles
         rows: 14, // Number of visible tile rows
         tilewidth: 48.4 * bubbleSizeScale,
         tileheight: 48.4 * bubbleSizeScale,
@@ -757,21 +757,27 @@ window.onload = function() {
     }
     
     function checkGameOver() {
+        // Only check for game over if the game is running
+        if (gamestate !== gamestates.ready && gamestate !== gamestates.shootbubble && gamestate !== gamestates.removecluster) {
+            return false;
+        }
         var warningPlayed = false;
+        var floorY = getFloorY();
         for (var i=0; i<level.columns; i++) {
-            // Check if there are bubbles in the bottom row
-            if (level.tiles[i][level.rows-1].type != -1) {
-                // If game is not yet over, play warning sound once
-                if (!warningPlayed && gamestate != gamestates.gameover) {
-                    playSound(sounds.warning);
-                    warningPlayed = true;
+            var j = level.rows-1;
+            var tile = level.tiles[i][j];
+            if (tile.type != -1) {
+                var coord = getTileCoordinate(i, j);
+                if (coord.tiley + level.tileheight >= floorY - 26) {
+                    if (!warningPlayed && gamestate != gamestates.gameover) {
+                        playSound(sounds.warning);
+                        warningPlayed = true;
+                    }
+                    nextBubble();
+                    setGameState(gamestates.gameover);
+                    playSound(sounds.gameover);
+                    return true;
                 }
-                // Game over
-                nextBubble();
-                setGameState(gamestates.gameover);
-                // Play game over sound
-                playSound(sounds.gameover);
-                return true;
             }
         }
         return false;

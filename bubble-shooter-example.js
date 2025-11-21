@@ -168,6 +168,11 @@ window.onload = function() {
     // Animation variables
     var animationstate = 0;
     var animationtime = 0;
+
+    // Add global warning timer
+    var warningTimer = 0;
+    var warningActive = false;
+    var lastWarningPlayed = 0;
     
     // Aim dots animation
     var aimDotsOffset = 0;     // distance offset along the path (pixels)
@@ -443,6 +448,39 @@ window.onload = function() {
         }
         // Always update falling bubbles physics
         updateFallingBubbles(dt);
+        
+        // Periodic warning logic
+        var firstRowY = level.y + levelFallOffset;
+        var floorY = getFloorY();
+        var maxDistance = canvas.height - level.y;
+        var dangerZone = maxDistance * 0.20;
+        var bubblesInDanger = false;
+        // Check if any bubble is within the bottom 20% area
+        for (var i = 0; i < level.columns; i++) {
+            for (var j = 0; j < level.rows; j++) {
+                var tile = level.tiles[i][j];
+                if (tile.type >= 0) {
+                    var coord = getTileCoordinate(i, j);
+                    if ((floorY - (coord.tiley + level.tileheight)) <= dangerZone) {
+                        bubblesInDanger = true;
+                        break;
+                    }
+                }
+            }
+            if (bubblesInDanger) break;
+        }
+        if (bubblesInDanger && gamestate != gamestates.gameover) {
+            warningActive = true;
+            warningTimer += dt;
+            if (warningTimer - lastWarningPlayed >= 2.0) {
+                playSound(sounds.warning);
+                lastWarningPlayed = warningTimer;
+            }
+        } else {
+            warningActive = false;
+            warningTimer = 0;
+            lastWarningPlayed = 0;
+        }
     }
     
     function setGameState(newgamestate) {

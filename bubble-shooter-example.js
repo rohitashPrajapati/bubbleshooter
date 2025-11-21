@@ -129,7 +129,7 @@ window.onload = function() {
                     x: 0,
                     y: 0,
                     angle: 0,
-                    speed: 1000,
+                    speed: 2500, // Increased shooting speed
                     dropspeed: 900,
                     tiletype: 0,
                     visible: false

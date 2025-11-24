@@ -1312,15 +1312,16 @@ window.onload = function() {
         var diry = -Math.sin(angle);
         var x = startX;
         var y = startY;
-        var step = 24; // pixels per dot spacing
+        var step = 36; // increased pixels per dot spacing for more distance
         var maxDots = 22;
         var leftBound = level.x + level.tilewidth/2;
         var rightBound = level.x + level.width - level.tilewidth/2;
         var topStop = level.y + level.tileheight/2; // roof stop
-        context.fillStyle = "#4ade80"; // green dots
+        context.fillStyle = "#FFD700"; // golden dots
         // Start with a partial step so dots appear to move forward
         var advance = aimDotsOffset % step;
         var dots = 0;
+        var dotRadius = 8; // bigger dot size
         while (dots < maxDots) {
             // advance by current segment length (partial for first, full afterwards)
             x += dirx * advance;
@@ -1352,7 +1353,7 @@ window.onload = function() {
 
             // draw current dot
             context.beginPath();
-            context.arc(x, y, 4, 0, Math.PI*2, false);
+            context.arc(x, y, dotRadius, 0, Math.PI*2, false);
             context.fill();
 
             // If we hit a bubble, stop drawing more dots

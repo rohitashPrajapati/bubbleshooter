@@ -1121,19 +1121,17 @@ window.onload = function() {
             drawCenterText(scores[s].toString(), sx, floorTop + 20, segmentWidth);
         }
         
-        // Draw score
+        // Draw score at top center, big and bold, no label, no background
+        context.save();
+        context.font = "bold 54px Verdana";
         context.fillStyle = "#cfd6ff";
-        context.font = "18px Verdana";
-        // Score label near right, big number near floor bottom, right-aligned
-        context.fillStyle = "#cfd6ff";
-        context.font = "18px Verdana";
-        context.textAlign = "right";
-        // Label a little above the baseline
-        context.fillText("Score:", level.x + level.width - 20, uiFloorTop + uiFloorHeight - 50);
-        // Big number sitting on floor bottom line with padding
-        context.font = "bold 34px Verdana";
-        context.fillText(String(score), level.x + level.width - 20, uiFloorTop + uiFloorHeight - 8);
-        context.textAlign = "start";
+        context.textAlign = "center";
+        context.globalAlpha = 1.0; // Slightly transparent overlay
+        var scoreX = level.x + level.width / 2;
+        var scoreY = level.y + 60; // 60px from top of play field
+        context.fillText(String(score), scoreX, scoreY);
+        context.globalAlpha = 1.0;
+        context.restore();
 
         // Render cluster
         if (showcluster) {

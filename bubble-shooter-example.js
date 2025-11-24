@@ -1426,22 +1426,23 @@ window.onload = function() {
     function createLevel() {
         // Create a level with random tiles
         totalRowsAdded = totalRows; // Start with all rows drawn
-        for (var j=0; j<totalRows; j++) { // initialize all rows including hidden
+        // Generate vertical/random honeycomb-like groups
+        for (var i=0; i<level.columns; i++) {
             var colorCount = bubblecolors;
             var groupSize = 3;
             if (totalRowsAdded <= easyRows) {
-                colorCount = Math.min(3, bubblecolors); // at least 3 colors for easy rows
-                groupSize = 4; // group bubbles for easier bursting
+                colorCount = Math.min(3, bubblecolors);
+                groupSize = 4;
             } else if (totalRowsAdded <= easyRows + 10) {
-                colorCount = Math.min(4, bubblecolors); // increase to 4 or more colors
+                colorCount = Math.min(4, bubblecolors);
                 groupSize = 2;
             } else {
-                colorCount = bubblecolors; // use all available colors (7)
-                groupSize = 1; // fully random
+                colorCount = bubblecolors;
+                groupSize = 1;
             }
             var randomtile = randRange(0, colorCount-1);
             var count = 0;
-            for (var i=0; i<level.columns; i++) {
+            for (var j=0; j<totalRows; j++) {
                 if (count >= groupSize) {
                     var newtile = randRange(0, colorCount-1);
                     if (newtile == randomtile) {
@@ -1453,7 +1454,12 @@ window.onload = function() {
                 count++;
                 // Fill visible rows and hidden row with bubbles
                 if (j < level.rows/2 || j == totalRows-1) {
-                    level.tiles[i][j].type = randomtile;
+                    // Add randomness for honeycomb effect
+                    if (Math.random() < 0.5) {
+                        level.tiles[i][j].type = randomtile;
+                    } else {
+                        level.tiles[i][j].type = randRange(0, colorCount-1);
+                    }
                 } else {
                     level.tiles[i][j].type = -1;
                 }

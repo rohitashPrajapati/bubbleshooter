@@ -178,6 +178,10 @@ window.onload = function() {
     var aimDotsOffset = 0;     // distance offset along the path (pixels)
     var aimDotsSpeed = 120;    // pixels per second (slower)
 
+    // Projection dot colors by bubble index (fill this array with your colors)
+    // Example: ["#FFD700", "#FF0000", "#00FF00", ...]
+    var projectionDotColors = ["#ffb500", "#681500", "#879901", "#efc362", "#fef9ea", "#fe9400", "#f4e09b"];
+
     // UI layout caches for floor placement so other renderers can align
     var uiFloorTop = 0;
     var uiFloorHeight = 0;
@@ -426,7 +430,12 @@ window.onload = function() {
             // Gradient: speed decreases as distanceToFloor decreases
             var speedRatio = Math.max(0, Math.min(1, distanceToFloor / maxDistance));
             // Interpolate between base and min speed
-            levelFallSpeed = minLevelFallSpeed + (baseLevelFallSpeed - minLevelFallSpeed) * speedRatio;
+                // If warning is active, decrease speed to 5% of baseLevelFallSpeed
+                if (warningActive) {
+                    levelFallSpeed = baseLevelFallSpeed * 0.40;
+                } else {
+                    levelFallSpeed = minLevelFallSpeed + (baseLevelFallSpeed - minLevelFallSpeed) * speedRatio;
+                }
             levelFallOffset += dt * levelFallSpeed;
             if (levelFallOffset >= level.rowheight) {
                 levelFallOffset -= level.rowheight;
@@ -1317,7 +1326,9 @@ window.onload = function() {
         var leftBound = level.x + level.tilewidth/2;
         var rightBound = level.x + level.width - level.tilewidth/2;
         var topStop = level.y + level.tileheight/2; // roof stop
-        context.fillStyle = "#FFD700"; // golden dots
+        // Set dot color based on shooter bubble index
+        var dotColor = projectionDotColors[player.tiletype] || "#FFD700";
+        context.fillStyle = dotColor;
         // Start with a partial step so dots appear to move forward
         var advance = aimDotsOffset % step;
         var dots = 0;

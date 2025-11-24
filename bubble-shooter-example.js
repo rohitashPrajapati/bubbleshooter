@@ -580,7 +580,8 @@ window.onload = function() {
                         vx: scatterVX,
                         bouncedOnce: false,
                         scatterUp: true,
-                        scatterTimer: 0
+                        scatterTimer: 0,
+                        initialY: ccoord.tiley + level.tileheight/2 // Track initial Y for bounce strength
                     });
                     // Remove from grid immediately
                     ct.type = -1;
@@ -727,7 +728,14 @@ window.onload = function() {
                 if (b.bounceCount < 3) { // Allow up to 3 bounces
                     var segIdx1 = getSegmentIndex(b.x);
                     if (b.bounceCount === 0) score += getSegmentScore(segIdx1); // Only score on first contact
-                    b.vy = -Math.max(220, Math.abs(b.vy) * scatterBounceDamping); // Lower bounce height for realism
+                    // Bounce strength depends on fall height, but limit bounce so it can't go above half the play field
+                    var fallHeight = (typeof b.initialY !== 'undefined') ? Math.max(0, contactY - b.initialY) : 0;
+                    var bounceStrength = 0.5 + Math.min(1.0, fallHeight / (canvas.height * 0.5)); // 0.5 to 1.5 multiplier
+                    var vyBounce = Math.abs(b.vy) * scatterBounceDamping * bounceStrength;
+                    // Calculate max bounce velocity so bubble can't reach above half the play field
+                    var maxBounceHeight = canvas.height * 0.5;
+                    var maxVy = Math.sqrt(2 * gravity * maxBounceHeight);
+                    b.vy = -Math.min(Math.max(220, vyBounce), maxVy);
                     b.vx = b.vx * (1 + scatterBounceSpread * (Math.random() - 0.5));
                     b.bounceCount++;
                     playSound(sounds.bounce);

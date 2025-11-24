@@ -200,6 +200,7 @@ window.onload = function() {
     var scatterMinVX = 120; // minimum horizontal velocity (pixels/sec)
     var scatterMaxVX = 420; // maximum horizontal velocity (pixels/sec)
     var scatterBounceDamping = 0.85; // vertical bounce damping (higher for more elastic bounce)
+    var upperBounceStrength = 1.0; // global multiplier for upper bounce effect
     var scatterBounceSpread = 0.25; // how much horizontal velocity increases after bounce
     
     // Images
@@ -563,20 +564,23 @@ window.onload = function() {
             // Play pop sound when popping cluster
             if (cluster.length > 0) {
                 playSound(sounds.pop);
-                // Convert matched cluster itself to falling bubbles (bounce instead of fade)
+                // Convert matched cluster itself to falling bubbles (scatter upward before falling)
                 for (var c=0; c<cluster.length; c++) {
                     var ct = cluster[c];
                     var ccoord = getTileCoordinate(ct.x, ct.y);
-                    // Give each bubble a random horizontal velocity for scatter
+                    // Scatter upward with random velocities
                     var scatterVX = (Math.random() < 0.5 ? -1 : 1) * (scatterMinVX + Math.random() * (scatterMaxVX - scatterMinVX));
+                    var scatterVY = - (350 + Math.random() * 250); // Upward velocity
                     fallingBubbles.push({
                         x: ccoord.tilex + level.tilewidth/2,
                         y: ccoord.tiley + level.tileheight/2,
                         r: level.radius,
                         type: ct.type,
-                        vy: 0,
+                        vy: scatterVY,
                         vx: scatterVX,
-                        bouncedOnce: false
+                        bouncedOnce: false,
+                        scatterUp: true,
+                        scatterTimer: 0
                     });
                     // Remove from grid immediately
                     ct.type = -1;
@@ -688,13 +692,33 @@ window.onload = function() {
     function updateFallingBubbles(dt) {
         if (fallingBubbles.length === 0) return;
         var floorY = getFloorY();
+        var topBounceY = level.y + level.tileheight/2; // Top bounce line
         for (var i = fallingBubbles.length - 1; i >= 0; i--) {
             var b = fallingBubbles[i];
             // Add horizontal scatter movement
             if (typeof b.vx === 'undefined') b.vx = 0;
+            // If bubble is in scatterUp phase, let it move upward for a short time before gravity applies
+            if (b.scatterUp) {
+                b.scatterTimer += dt;
+                // Scatter upward for 0.25s, then switch to normal gravity
+                if (b.scatterTimer < 0.25) {
+                    b.x += b.vx * dt;
+                    b.y += b.vy * dt;
+                    continue;
+                } else {
+                    b.scatterUp = false;
+                }
+            }
             b.vy += gravity * dt;
             b.x += b.vx * dt;
             b.y += b.vy * dt;
+            // Bounce at the top if bubble is moving up and hits the top
+            if (b.y - b.r <= topBounceY && b.vy < 0) {
+                b.y = topBounceY + b.r;
+                b.vy = Math.abs(b.vy) * scatterBounceDamping * upperBounceStrength; // Bounce downward, controlled by global
+                b.vx = b.vx * (1 + scatterBounceSpread * (Math.random() - 0.5));
+                playSound(sounds.bounce);
+            }
             var contactY = floorY - b.r;
             if (b.y >= contactY) {
                 b.y = contactY;

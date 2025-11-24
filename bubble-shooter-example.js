@@ -195,7 +195,7 @@ window.onload = function() {
     var floatingclusters = [];
     // Bouncing fallen bubbles
     var fallingBubbles = [];
-    var gravity = 1800;
+    var gravity = 2500; // Increased for faster bubble fall
     // Scattering effect parameters
     var scatterMinVX = 120; // minimum horizontal velocity (pixels/sec)
     var scatterMaxVX = 420; // maximum horizontal velocity (pixels/sec)

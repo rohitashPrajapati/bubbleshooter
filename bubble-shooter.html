@@ -33,8 +33,12 @@
         <canvas id="viewport"></canvas>
         <!-- Pause/Resume Button -->
         <div id="pause-btn-container" style="position: absolute; top: 24px; right: 32px; z-index: 10; display: flex; gap: 12px;">
-            <button id="pause-btn" style="background: #fff; border-radius: 50px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.12); padding: 12px 32px; font-size: 20px; color: #3b59ff; font-weight: bold; cursor: pointer;">⏸ Pause</button>
-            <button id="sound-btn" style="background: #fff; border-radius: 50px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.12); padding: 12px 18px; font-size: 20px; color: #3b59ff; font-weight: bold; cursor: pointer;">🔊</button>
+            <button id="pause-btn" style="background: #fff; border-radius: 50px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.12); padding: 12px 18px; font-size: 32px; color: #3b59ff; font-weight: bold; cursor: pointer; line-height: 20px;">⏸</button>
+            <button id="sound-btn" style="background: #fff; border-radius: 50px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.12); padding: 12px 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <span id="sound-icon">
+                    <svg id="sound-on-svg" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" style="display:block; color:#3b59ff;"><path d="M20.522 7.228a6.74 6.74 0 0 1 0 9.544M7.5 15.75H3a.75.75 0 0 1-.75-.75V9A.75.75 0 0 1 3 8.25h4.5L14.25 3v18L7.5 15.75Zm0-7.5v7.5m10.369-5.869a2.99 2.99 0 0 1 0 4.238" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </span>
+            </button>
         </div>
         <!-- Paused Overlay -->
         <div id="paused-overlay" style="display:none; position: absolute; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:20; justify-content:center; align-items:center;">

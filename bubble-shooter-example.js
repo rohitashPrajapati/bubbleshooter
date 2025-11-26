@@ -28,6 +28,7 @@ window.onload = function() {
     var pausedOverlay = document.getElementById("paused-overlay");
     var resumeBtn = document.getElementById("resume-btn");
     var soundBtn = document.getElementById("sound-btn");
+    var soundIcon = document.getElementById("sound-icon");
     var isPaused = false;
     var soundEnabled = true;
     
@@ -482,7 +483,7 @@ window.onload = function() {
         if (bubblesInDanger && gamestate != gamestates.gameover) {
             warningActive = true;
             warningTimer += dt;
-            if (warningTimer - lastWarningPlayed >= 2.0) {
+            if (warningTimer - lastWarningPlayed >= 1.0) {
                 playSound(sounds.warning);
                 lastWarningPlayed = warningTimer;
             }
@@ -879,11 +880,11 @@ window.onload = function() {
         var colorCount = bubblecolors;
         if (totalRowsAdded <= easyRows) {
             colorCount = Math.min(3, bubblecolors);
-        } else if (totalRowsAdded <= easyRows + 5) {
-            colorCount = Math.min(4, bubblecolors);
         } else if (totalRowsAdded <= easyRows + 10) {
+            colorCount = Math.min(4, bubblecolors);
+        } else if (totalRowsAdded <= easyRows + 20) {
             colorCount = Math.min(5, bubblecolors);
-        } else if (totalRowsAdded <= easyRows + 15) {
+        } else if (totalRowsAdded <= easyRows + 30) {
             colorCount = Math.min(6, bubblecolors);
         } else {
             colorCount = bubblecolors;
@@ -1690,12 +1691,18 @@ window.onload = function() {
         };
     }
 
+    // SVGs for sound on/off
+    var soundOnSVG = '<svg id="sound-on-svg" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" style="display:block; color:#3b59ff;"><path d="M20.522 7.228a6.74 6.74 0 0 1 0 9.544M7.5 15.75H3a.75.75 0 0 1-.75-.75V9A.75.75 0 0 1 3 8.25h4.5L14.25 3v18L7.5 15.75Zm0-7.5v7.5m10.369-5.869a2.99 2.99 0 0 1 0 4.238" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+    var soundOffSVG = '<svg id="sound-off-svg" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="28" height="28" style="display:block; color:#3b59ff;"><path d="M27.363 9.637a8.988 8.988 0 0 1 0 12.726M10 11v10m13.825-7.825a3.99 3.99 0 0 1 0 5.65M6 5l20 22m-7-7.7V28l-9-7H4a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1h6l.85-.662m3.175-2.463L19 4v9.35" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+
     // Sound on/off button logic
-    if (soundBtn) {
+    if (soundBtn && soundIcon) {
         soundBtn.onclick = function() {
             soundEnabled = !soundEnabled;
-            soundBtn.textContent = soundEnabled ? "🔊" : "🔇";
+            soundIcon.innerHTML = soundEnabled ? soundOnSVG : soundOffSVG;
         };
+        // Ensure initial icon is correct
+        soundIcon.innerHTML = soundEnabled ? soundOnSVG : soundOffSVG;
     }
 
     // Call init to start the game

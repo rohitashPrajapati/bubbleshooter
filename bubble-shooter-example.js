@@ -27,7 +27,9 @@ window.onload = function() {
     var pauseBtn = document.getElementById("pause-btn");
     var pausedOverlay = document.getElementById("paused-overlay");
     var resumeBtn = document.getElementById("resume-btn");
+    var soundBtn = document.getElementById("sound-btn");
     var isPaused = false;
+    var soundEnabled = true;
     
     // Responsive canvas setup for portrait mode
     function resizeCanvas() {
@@ -288,7 +290,7 @@ window.onload = function() {
 
     // Play a sound. Use cloneNode to allow overlapping playback.
     function playSound(audio) {
-        if (!audio) return;
+        if (!audio || !soundEnabled) return;
         try {
             // ensure both the original and clone use current master volume
             try { audio.volume = soundVolume; } catch(e) {}
@@ -1685,6 +1687,14 @@ window.onload = function() {
             isPaused = false;
             pausedOverlay.style.display = "none";
             pauseBtn.style.display = "inline-block";
+        };
+    }
+
+    // Sound on/off button logic
+    if (soundBtn) {
+        soundBtn.onclick = function() {
+            soundEnabled = !soundEnabled;
+            soundBtn.textContent = soundEnabled ? "🔊" : "🔇";
         };
     }
 

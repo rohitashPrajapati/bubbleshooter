@@ -32,8 +32,9 @@
 <body>
         <canvas id="viewport"></canvas>
         <!-- Pause/Resume Button -->
-        <div id="pause-btn-container" style="position: absolute; top: 24px; right: 32px; z-index: 10;">
+        <div id="pause-btn-container" style="position: absolute; top: 24px; right: 32px; z-index: 10; display: flex; gap: 12px;">
             <button id="pause-btn" style="background: #fff; border-radius: 50px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.12); padding: 12px 32px; font-size: 20px; color: #3b59ff; font-weight: bold; cursor: pointer;">⏸ Pause</button>
+            <button id="sound-btn" style="background: #fff; border-radius: 50px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.12); padding: 12px 18px; font-size: 20px; color: #3b59ff; font-weight: bold; cursor: pointer;">🔊</button>
         </div>
         <!-- Paused Overlay -->
         <div id="paused-overlay" style="display:none; position: absolute; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:20; justify-content:center; align-items:center;">

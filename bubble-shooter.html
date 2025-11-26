@@ -33,7 +33,11 @@
         <canvas id="viewport"></canvas>
         <!-- Pause/Resume Button -->
         <div id="pause-btn-container" style="position: absolute; top: 24px; right: 32px; z-index: 10; display: flex; gap: 12px;">
-            <button id="pause-btn" style="background: #fff; border-radius: 50px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.12); padding: 12px 18px; font-size: 32px; color: #3b59ff; font-weight: bold; cursor: pointer; line-height: 20px;">⏸</button>
+            <button id="pause-btn" style="background: #fff; border-radius: 50px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.12); padding: 12px 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <span id="pause-icon">
+                    <svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" width="28" height="28" style="display:block; color:#3b59ff;"><path d="M7.25 6.125h4.5v15.75h-4.5V6.125Zm9 0h4.5v15.75h-4.5V6.125Z" fill="currentColor"></path></svg>
+                </span>
+            </button>
             <button id="sound-btn" style="background: #fff; border-radius: 50px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.12); padding: 12px 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
                 <span id="sound-icon">
                     <svg id="sound-on-svg" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" style="display:block; color:#3b59ff;"><path d="M20.522 7.228a6.74 6.74 0 0 1 0 9.544M7.5 15.75H3a.75.75 0 0 1-.75-.75V9A.75.75 0 0 1 3 8.25h4.5L14.25 3v18L7.5 15.75Zm0-7.5v7.5m10.369-5.869a2.99 2.99 0 0 1 0 4.238" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
@@ -43,8 +47,16 @@
         <!-- Paused Overlay -->
         <div id="paused-overlay" style="display:none; position: absolute; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:20; justify-content:center; align-items:center;">
             <div style="background:#fff; border-radius:24px; padding:40px 60px; text-align:center; box-shadow:0 4px 32px rgba(0,0,0,0.18);">
-                <div style="font-size:32px; color:#ffb500; font-weight:bold; margin-bottom:18px;">⏸ Paused</div>
-                <button id="resume-btn" style="background: #3b59ff; color: #fff; border: none; border-radius: 50px; font-size: 22px; font-weight: bold; padding: 16px 48px; cursor: pointer;">▶ Resume</button>
+                <div style="font-size:32px; color:#ffb500; font-weight:bold; margin-bottom:18px; display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" width="32" height="32" style="display:block; color:#ffb500;"><path d="M7.25 6.125h4.5v15.75h-4.5V6.125Zm9 0h4.5v15.75h-4.5V6.125Z" fill="currentColor"></path></svg>
+                    Paused
+                </div>
+                <button id="resume-btn" style="background: #3b59ff; color: #fff; border: none; border-radius: 50px; font-size: 22px; font-weight: bold; padding: 16px 48px; cursor: pointer; display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <span id="play-icon">
+                        <svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="28" height="28" style="display:block; color:#fff;"><path d="M17.82 9.469 6.578 2.594a.625.625 0 0 0-.953.531v13.75a.625.625 0 0 0 .953.531l11.242-6.875a.618.618 0 0 0 0-1.062Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="currentColor"></path></svg>
+                    </span>
+                    Resume
+                </button>
             </div>
         </div>
 </body>

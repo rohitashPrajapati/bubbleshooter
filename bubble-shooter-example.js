@@ -23,6 +23,11 @@ window.onload = function() {
     // Get the canvas and context
     var canvas = document.getElementById("viewport");
     var context = canvas.getContext("2d");
+    // Pause/Resume UI elements
+    var pauseBtn = document.getElementById("pause-btn");
+    var pausedOverlay = document.getElementById("paused-overlay");
+    var resumeBtn = document.getElementById("resume-btn");
+    var isPaused = false;
     
     // Responsive canvas setup for portrait mode
     function resizeCanvas() {
@@ -372,38 +377,31 @@ window.onload = function() {
     
     // Main loop
     function main(tframe) {
-        // Request animation frames
         window.requestAnimationFrame(main);
-    
         if (!initialized) {
             // Preloader
-            
-            // Clear the canvas
             context.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw the frame
             drawFrame();
-            
-            // Draw a progress bar
             var loadpercentage = loadcount/loadtotal;
             context.strokeStyle = "#ff8080";
             context.lineWidth=3;
             context.strokeRect(18.5, 0.5 + canvas.height - 51, canvas.width-37, 32);
             context.fillStyle = "#ff8080";
             context.fillRect(18.5, 0.5 + canvas.height - 51, loadpercentage*(canvas.width-37), 32);
-            
-            // Draw the progress text
             var loadtext = "Loaded " + loadcount + "/" + loadtotal + " images";
             context.fillStyle = "#000000";
             context.font = "16px Verdana";
             context.fillText(loadtext, 18, 0.5 + canvas.height - 63);
-            
             if (preloaded) {
-                // Add a delay for demonstration purposes
                 setTimeout(function(){initialized = true;}, 1000);
             }
         } else {
-            // Update and render the game
+            // Pause logic: skip update/render if paused
+            if (isPaused) {
+                // Optionally, you can render a dimmed frame if desired
+                render();
+                return;
+            }
             update(tframe);
             render();
         }
@@ -1674,6 +1672,20 @@ window.onload = function() {
         } else if (gamestate == gamestates.gameover) {
             newGame();
         }
+    }
+
+    // Pause/Resume button logic
+    if (pauseBtn && pausedOverlay && resumeBtn) {
+        pauseBtn.onclick = function() {
+            isPaused = true;
+            pausedOverlay.style.display = "flex";
+            pauseBtn.style.display = "none";
+        };
+        resumeBtn.onclick = function() {
+            isPaused = false;
+            pausedOverlay.style.display = "none";
+            pauseBtn.style.display = "inline-block";
+        };
     }
 
     // Call init to start the game

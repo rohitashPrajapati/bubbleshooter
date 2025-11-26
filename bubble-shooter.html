@@ -30,6 +30,17 @@
 <script type='text/javascript' src='bubble-shooter-example.js'></script>
 </head>
 <body>
-<canvas id="viewport"></canvas>
+        <canvas id="viewport"></canvas>
+        <!-- Pause/Resume Button -->
+        <div id="pause-btn-container" style="position: absolute; top: 24px; right: 32px; z-index: 10;">
+            <button id="pause-btn" style="background: #fff; border-radius: 50px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.12); padding: 12px 32px; font-size: 20px; color: #3b59ff; font-weight: bold; cursor: pointer;">⏸ Pause</button>
+        </div>
+        <!-- Paused Overlay -->
+        <div id="paused-overlay" style="display:none; position: absolute; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:20; justify-content:center; align-items:center;">
+            <div style="background:#fff; border-radius:24px; padding:40px 60px; text-align:center; box-shadow:0 4px 32px rgba(0,0,0,0.18);">
+                <div style="font-size:32px; color:#ffb500; font-weight:bold; margin-bottom:18px;">⏸ Paused</div>
+                <button id="resume-btn" style="background: #3b59ff; color: #fff; border: none; border-radius: 50px; font-size: 22px; font-weight: bold; padding: 16px 48px; cursor: pointer;">▶ Resume</button>
+            </div>
+        </div>
 </body>
 </html>

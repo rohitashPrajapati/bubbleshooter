@@ -1647,19 +1647,27 @@ window.onload = function() {
     }
     
     // Touch event handlers
+
+    // Track drag state for mobile shooting
+    var isTouchDragging = false;
+    var dragStartPos = null;
+
     function onTouchMove(e) {
         e.preventDefault();
         var pos = getTouchPos(canvas, e);
-        
+        // Mark as dragging if moved
+        if (!isTouchDragging && dragStartPos) {
+            var dx = Math.abs(pos.x - dragStartPos.x);
+            var dy = Math.abs(pos.y - dragStartPos.y);
+            if (dx > 8 || dy > 8) {
+                isTouchDragging = true;
+            }
+        }
         // Get the touch angle (same logic as mouse)
         var touchangle = radToDeg(Math.atan2((player.y+level.tileheight/2) - pos.y, pos.x - (player.x+level.tilewidth/2)));
-        
-        // Convert range to 0, 360 degrees
         if (touchangle < 0) {
             touchangle = 180 + (180 + touchangle);
         }
-        
-        // Restrict angle to 8, 172 degrees
         var lbound = 8;
         var ubound = 172;
         if (touchangle > 90 && touchangle < 270) {
@@ -1667,15 +1675,14 @@ window.onload = function() {
         } else {
             if (touchangle < lbound || touchangle >= 270) touchangle = lbound;
         }
-        
-        // Set the player angle
         player.angle = touchangle;
     }
-    
+
     function onTouchStart(e) {
         e.preventDefault();
         var pos = getTouchPos(canvas, e);
-        
+        dragStartPos = pos;
+        isTouchDragging = false;
         // Update angle on touch start
         var touchangle = radToDeg(Math.atan2((player.y+level.tileheight/2) - pos.y, pos.x - (player.x+level.tilewidth/2)));
         if (touchangle < 0) {
@@ -1690,15 +1697,17 @@ window.onload = function() {
         }
         player.angle = touchangle;
     }
-    
+
     function onTouchEnd(e) {
         e.preventDefault();
-        // Shoot on touch end
-        if (gamestate == gamestates.ready) {
+        // Only shoot if a drag occurred
+        if (gamestate == gamestates.ready && isTouchDragging) {
             shootBubble();
         } else if (gamestate == gamestates.gameover) {
             newGame();
         }
+        dragStartPos = null;
+        isTouchDragging = false;
     }
 
     // Pause/Resume button logic

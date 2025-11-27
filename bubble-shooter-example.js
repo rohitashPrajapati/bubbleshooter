@@ -38,25 +38,39 @@ window.onload = function() {
         var maxHeight = window.innerHeight;
         var targetAspect = 11 / 16;
         var canvasWidth, canvasHeight;
-        if (maxWidth / maxHeight > targetAspect) {
-            canvasHeight = maxHeight;
-            canvasWidth = maxHeight * targetAspect;
-            if (canvasWidth > maxWidth) {
-                canvasWidth = maxWidth;
-                canvasHeight = maxWidth / targetAspect;
-            }
-        } else {
+        // On mobile, always fill the screen and increase playable area
+        if (window.innerWidth <= 600) {
+            // Mobile: canvas fills screen, game logic uses full available size
             canvasWidth = maxWidth;
-            canvasHeight = maxWidth / targetAspect;
-            if (canvasHeight > maxHeight) {
+            canvasHeight = maxHeight;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            canvas.style.width = canvasWidth + 'px';
+            canvas.style.height = canvasHeight + 'px';
+            level.columns = 11;
+        } else {
+            // Desktop: keep original logic
+            if (maxWidth / maxHeight > targetAspect) {
                 canvasHeight = maxHeight;
                 canvasWidth = maxHeight * targetAspect;
+                if (canvasWidth > maxWidth) {
+                    canvasWidth = maxWidth;
+                    canvasHeight = maxWidth / targetAspect;
+                }
+            } else {
+                canvasWidth = maxWidth;
+                canvasHeight = maxWidth / targetAspect;
+                if (canvasHeight > maxHeight) {
+                    canvasHeight = maxHeight;
+                    canvasWidth = maxHeight * targetAspect;
+                }
             }
+            canvas.width = Math.floor(canvasWidth);
+            canvas.height = Math.floor(canvasHeight);
+            canvas.style.width = canvas.width + 'px';
+            canvas.style.height = canvas.height + 'px';
+            level.columns = 12;
         }
-        canvas.width = Math.floor(canvasWidth);
-        canvas.height = Math.floor(canvasHeight);
-        canvas.style.width = canvas.width + 'px';
-        canvas.style.height = canvas.height + 'px';
         // Bubble sizing and grid fit
         // Adjust grid width and center horizontally to avoid right edge clipping
         var bubbleSize = Math.min(
@@ -70,10 +84,11 @@ window.onload = function() {
         level.width = level.columns * (level.tilewidth + bubbleGap) + (level.tilewidth + bubbleGap) / 2;
         // Center grid horizontally with left and right margin
         level.x = Math.floor((canvas.width - level.width) / 2);
+        // Remove top/bottom gaps: playable area is full canvas
         var floorHeight = 2 * level.tileheight + 50;
         var floorTop = canvas.height - floorHeight;
-        level.rows = Math.floor((floorTop - level.y) / (level.rowheight + bubbleGap));
-        level.height = floorTop - level.y;
+        level.rows = Math.floor((canvas.height - level.y) / (level.rowheight + bubbleGap));
+        level.height = canvas.height - level.y;
         totalRows = level.rows + 1;
         for (var i=0; i<level.columns; i++) {
             if (!level.tiles[i]) level.tiles[i] = [];
@@ -843,20 +858,23 @@ window.onload = function() {
         }
         var warningPlayed = false;
         var floorY = getFloorY();
-        for (var i=0; i<level.columns; i++) {
-            var j = level.rows-1;
-            var tile = level.tiles[i][j];
-            if (tile.type != -1) {
-                var coord = getTileCoordinate(i, j);
-                if (coord.tiley + level.tileheight >= floorY - 26) {
-                    if (!warningPlayed && gamestate != gamestates.gameover) {
-                        playSound(sounds.warning);
-                        warningPlayed = true;
+        // Game over if any bubble is at or below the floor line
+        for (var i = 0; i < level.columns; i++) {
+            for (var j = 0; j < level.rows; j++) {
+                var tile = level.tiles[i][j];
+                if (tile.type != -1) {
+                    var coord = getTileCoordinate(i, j);
+                    // If the bottom of the bubble is at or below the floorY
+                    if (coord.tiley + level.tileheight >= floorY-26) {
+                        if (!warningPlayed && gamestate != gamestates.gameover) {
+                            playSound(sounds.warning);
+                            warningPlayed = true;
+                        }
+                        nextBubble();
+                        setGameState(gamestates.gameover);
+                        playSound(sounds.gameover);
+                        return true;
                     }
-                    nextBubble();
-                    setGameState(gamestates.gameover);
-                    playSound(sounds.gameover);
-                    return true;
                 }
             }
         }

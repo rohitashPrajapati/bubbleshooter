@@ -20,8 +20,12 @@
 
 // The function gets called when the window is fully loaded
 window.onload = function() {
+        // Store CSS pixel dimensions for layout
+        var cssWidth = 0;
+        var cssHeight = 0;
     // Get the canvas and context
     var canvas = document.getElementById("viewport");
+    var dpr = window.devicePixelRatio || 1;
     var context = canvas.getContext("2d");
     // Pause/Resume UI elements
     var pauseBtn = document.getElementById("pause-btn");
@@ -37,60 +41,63 @@ window.onload = function() {
         var maxWidth = window.innerWidth;
         var maxHeight = window.innerHeight;
         var targetAspect = 11 / 16;
-        var canvasWidth, canvasHeight;
-        // On mobile, always fill the screen and increase playable area
+        // Calculate CSS pixel size for layout
         if (window.innerWidth <= 600) {
-            // Mobile: canvas fills screen, game logic uses full available size
-            canvasWidth = maxWidth;
-            canvasHeight = maxHeight;
-            canvas.width = canvasWidth;
-            canvas.height = canvasHeight;
-            canvas.style.width = canvasWidth + 'px';
-            canvas.style.height = canvasHeight + 'px';
-            level.columns = 8;
+            cssWidth = maxWidth;
+            cssHeight = maxHeight;
+            // Increase columns for mobile to fill width
+            level.columns = Math.floor(cssWidth / 48); // 48 is approx bubble size, adjust as needed
         } else {
-            // Desktop: keep original logic
             if (maxWidth / maxHeight > targetAspect) {
-                canvasHeight = maxHeight;
-                canvasWidth = maxHeight * targetAspect;
-                if (canvasWidth > maxWidth) {
-                    canvasWidth = maxWidth;
-                    canvasHeight = maxWidth / targetAspect;
+                cssHeight = maxHeight;
+                cssWidth = maxHeight * targetAspect;
+                if (cssWidth > maxWidth) {
+                    cssWidth = maxWidth;
+                    cssHeight = maxWidth / targetAspect;
                 }
             } else {
-                canvasWidth = maxWidth;
-                canvasHeight = maxWidth / targetAspect;
-                if (canvasHeight > maxHeight) {
-                    canvasHeight = maxHeight;
-                    canvasWidth = maxHeight * targetAspect;
+                cssWidth = maxWidth;
+                cssHeight = maxWidth / targetAspect;
+                if (cssHeight > maxHeight) {
+                    cssHeight = maxHeight;
+                    cssWidth = maxHeight * targetAspect;
                 }
             }
-            canvas.width = Math.floor(canvasWidth);
-            canvas.height = Math.floor(canvasHeight);
-            canvas.style.width = canvas.width + 'px';
-            canvas.style.height = canvas.height + 'px';
             level.columns = 12;
         }
-        // Bubble sizing and grid fit
-        // Adjust grid width and center horizontally to avoid right edge clipping
+        // Set canvas size for DPR
+        canvas.width = Math.floor(cssWidth * dpr);
+        canvas.height = Math.floor(cssHeight * dpr);
+        canvas.style.width = Math.floor(cssWidth) + 'px';
+        canvas.style.height = Math.floor(cssHeight) + 'px';
+        // Scale context for DPR
+        context.setTransform(dpr, 0, 0, dpr, 0, 0);
+        // Use cssWidth/cssHeight for all layout calculations below
         var bubbleSize = Math.min(
-            (canvas.width - bubbleGap * 2) / (level.columns + 0.5),
-            canvas.height / (level.rows + 2)
+            (cssWidth - bubbleGap * 2) / (level.columns),
+            cssHeight / (level.rows + 2)
         ) * bubbleSizeScale; // Use global scale
         level.tilewidth = bubbleSize - bubbleGap;
         level.tileheight = bubbleSize - bubbleGap;
         level.radius = (bubbleSize - bubbleGap) / 2;
         level.rowheight = level.tileheight * 0.95;
-        level.width = level.columns * (level.tilewidth + bubbleGap) + (level.tilewidth + bubbleGap) / 2;
-        // Center grid horizontally with left and right margin
-        level.x = Math.floor((canvas.width - level.width) / 2);
-        // Remove top/bottom gaps: playable area is full canvas
-        var floorHeight = 2 * level.tileheight + 50;
-        var floorTop = canvas.height - floorHeight;
-        level.rows = Math.floor((canvas.height - level.y) / (level.rowheight + bubbleGap));
-        // Set startingRows for visible bubbles
-        window.startingRows = window.innerWidth <= 600 ? 3 : 5;
-        level.height = canvas.height - level.y;
+        if (window.innerWidth <= 600) {
+            level.width = cssWidth;
+            level.x = 0;
+            var floorHeight = 2 * level.tileheight + 50;
+            var floorTop = cssHeight - floorHeight;
+            level.rows = Math.floor((cssHeight - level.y) / (level.rowheight + bubbleGap));
+            window.startingRows = 3;
+            level.height = cssHeight - level.y;
+        } else {
+            level.width = level.columns * (level.tilewidth + bubbleGap) + (level.tilewidth + bubbleGap) / 2;
+            level.x = Math.floor((cssWidth - level.width) / 2);
+            var floorHeight = 2 * level.tileheight + 50;
+            var floorTop = cssHeight - floorHeight;
+            level.rows = Math.floor((cssHeight - level.y) / (level.rowheight + bubbleGap));
+            window.startingRows = 5;
+            level.height = cssHeight - level.y;
+        }
         totalRows = level.rows + 1;
         for (var i=0; i<level.columns; i++) {
             if (!level.tiles[i]) level.tiles[i] = [];
@@ -332,7 +339,7 @@ window.onload = function() {
     // Helper: position the shooter and next bubble relative to bottom UI
     function positionShooterToFloor() {
         var floorHeight = 2*level.tileheight + 50;
-        var floorTop = canvas.height - floorHeight;
+        var floorTop = cssHeight - floorHeight;
         var desiredCenterY = floorTop + floorHeight - level.tileheight - 12;
         player.y = desiredCenterY - level.tileheight/2;
         // keep next bubble aligned left of shooter
@@ -1121,7 +1128,7 @@ window.onload = function() {
         // Draw level bottom (anchor to canvas bottom so no blank space remains)
         context.fillStyle = "#101422"; // dark floor band
         var floorHeight = 2*level.tileheight + 50; // floor band height
-        var floorTop = canvas.height - floorHeight; // stick to bottom edge
+        var floorTop = cssHeight - floorHeight; // stick to bottom edge
         // cache for other renderers
         uiFloorTop = floorTop;
         uiFloorHeight = floorHeight;
@@ -1442,8 +1449,8 @@ window.onload = function() {
     function drawBubble(x, y, index) {
         if (index < 0 || index >= bubblecolors)
             return;
-        
         // Draw the bubble sprite
+        // x, y, level.tilewidth, level.tileheight are in CSS pixels, context is scaled for DPR
         context.drawImage(bubbleimage, index * 2048, 0, 2048, 2078, x, y, level.tilewidth, level.tileheight);
     }
     
@@ -1643,8 +1650,8 @@ window.onload = function() {
     function getMousePos(canvas, e) {
         var rect = canvas.getBoundingClientRect();
         return {
-            x: Math.round((e.clientX - rect.left)/(rect.right - rect.left)*canvas.width),
-            y: Math.round((e.clientY - rect.top)/(rect.bottom - rect.top)*canvas.height)
+            x: Math.round((e.clientX - rect.left) / rect.width * cssWidth),
+            y: Math.round((e.clientY - rect.top) / rect.height * cssHeight)
         };
     }
     
@@ -1653,8 +1660,8 @@ window.onload = function() {
         var rect = canvas.getBoundingClientRect();
         var touch = e.touches[0] || e.changedTouches[0];
         return {
-            x: Math.round((touch.clientX - rect.left)/(rect.right - rect.left)*canvas.width),
-            y: Math.round((touch.clientY - rect.top)/(rect.bottom - rect.top)*canvas.height)
+            x: Math.round((touch.clientX - rect.left) / rect.width * cssWidth),
+            y: Math.round((touch.clientY - rect.top) / rect.height * cssHeight)
         };
     }
     

@@ -47,7 +47,7 @@ window.onload = function() {
             canvas.height = canvasHeight;
             canvas.style.width = canvasWidth + 'px';
             canvas.style.height = canvasHeight + 'px';
-            level.columns = 11;
+            level.columns = 8;
         } else {
             // Desktop: keep original logic
             if (maxWidth / maxHeight > targetAspect) {
@@ -88,6 +88,8 @@ window.onload = function() {
         var floorHeight = 2 * level.tileheight + 50;
         var floorTop = canvas.height - floorHeight;
         level.rows = Math.floor((canvas.height - level.y) / (level.rowheight + bubbleGap));
+        // Set startingRows for visible bubbles
+        window.startingRows = window.innerWidth <= 600 ? 3 : 5;
         level.height = canvas.height - level.y;
         totalRows = level.rows + 1;
         for (var i=0; i<level.columns; i++) {
@@ -119,13 +121,19 @@ window.onload = function() {
         width: 0,
         height: 0,
         columns: 12, // Safe fit for bubbles
-        rows: 14, // Number of visible tile rows
+        rows: 5, // Default, will be recalculated
         tilewidth: 48.4 * bubbleSizeScale,
         tileheight: 48.4 * bubbleSizeScale,
         rowheight: 41.14 * bubbleSizeScale,
         radius: 24.2 * bubbleSizeScale,
         tiles: []
     };
+    // Detect if the device is mobile
+    function isMobile() {
+        return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+    // Set startingRows global for initial bubbles
+    window.startingRows = isMobile() ? 3 : 5;
     var totalRows = level.rows + 1; // Always keep one extra hidden row
 
     const bubbleGap = 1;
@@ -171,7 +179,7 @@ window.onload = function() {
     // Number of different colors
     var bubblecolors = 7;
     // Number of easy rows before increasing color complexity
-    var easyRows = 30;
+    var easyRows = 20;
     // Track total rows added since game start
     var totalRowsAdded = 0;
     
@@ -900,9 +908,9 @@ window.onload = function() {
             colorCount = Math.min(3, bubblecolors);
         } else if (totalRowsAdded <= easyRows + 10) {
             colorCount = Math.min(4, bubblecolors);
-        } else if (totalRowsAdded <= easyRows + 20) {
+        } else if (totalRowsAdded <= easyRows + 5) {
             colorCount = Math.min(5, bubblecolors);
-        } else if (totalRowsAdded <= easyRows + 30) {
+        } else if (totalRowsAdded <= easyRows + 5) {
             colorCount = Math.min(6, bubblecolors);
         } else {
             colorCount = bubblecolors;
@@ -1489,8 +1497,8 @@ window.onload = function() {
                     count = 0;
                 }
                 count++;
-                // Fill visible rows and hidden row with bubbles
-                if (j < level.rows/2 || j == totalRows-1) {
+                // Only fill top startingRows rows and hidden row with bubbles
+                if (j < window.startingRows || j == totalRows-1) {
                     // Add randomness for honeycomb effect
                     if (Math.random() < 0.5) {
                         level.tiles[i][j].type = randomtile;

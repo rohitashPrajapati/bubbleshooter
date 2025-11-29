@@ -219,10 +219,12 @@ window.onload = function() {
     var uiBaseLineY = 0;
 
     // Slow continuous downward drift of the bubble field
-    var baseLevelFallSpeed = 13;        // base speed (pixels/sec)
-    var minLevelFallSpeed = 0.7;        // minimum speed near floor (pixels/sec)
+    var baseLevelFallSpeed = isMobile() ? 15 : 13;        // base speed (pixels/sec, slower for mobile)
+    var minLevelFallSpeed = isMobile() ? 0.8 : 0.7;      // minimum speed near floor (pixels/sec, slower for mobile)
     var levelFallSpeed = baseLevelFallSpeed; // current speed
     var levelFallOffset = 0;           // 0..rowheight (pixels)
+    // Easing for grid drop
+    function easeOutQuad(t) { return t * (2 - t); }
 
     // Clusters
     var showcluster = false;
@@ -453,13 +455,15 @@ window.onload = function() {
             var maxDistance = canvas.height - level.y; // maximum possible distance
             // Gradient: speed decreases as distanceToFloor decreases
             var speedRatio = Math.max(0, Math.min(1, distanceToFloor / maxDistance));
+            // Apply easing for smoother animation
+            var easedRatio = easeOutQuad(speedRatio);
             // Interpolate between base and min speed
-                // If warning is active, decrease speed to 5% of baseLevelFallSpeed
-                if (warningActive) {
-                    levelFallSpeed = baseLevelFallSpeed * 0.40;
-                } else {
-                    levelFallSpeed = minLevelFallSpeed + (baseLevelFallSpeed - minLevelFallSpeed) * speedRatio;
-                }
+            if (warningActive) {
+                levelFallSpeed = baseLevelFallSpeed * 0.40;
+            } else {
+                levelFallSpeed = minLevelFallSpeed + (baseLevelFallSpeed - minLevelFallSpeed) * easedRatio;
+            }
+            // Use subpixel movement for smoother animation
             levelFallOffset += dt * levelFallSpeed;
             if (levelFallOffset >= level.rowheight) {
                 levelFallOffset -= level.rowheight;

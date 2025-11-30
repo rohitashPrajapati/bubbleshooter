@@ -1214,13 +1214,28 @@ window.onload = function() {
         
         // Game Over overlay
         if (gamestate == gamestates.gameover) {
+            // Clamp overlay to visible canvas area
+            var overlayX = 0;
+            var overlayY = 0;
+            var overlayW = Math.max(0, Math.min(canvas.width, cssWidth));
+            var overlayH = Math.max(0, Math.min(canvas.height, cssHeight));
+            context.save();
             context.fillStyle = "rgba(0, 0, 0, 0.8)";
-            // Cover the entire game area including the scoring floor
-            context.fillRect(level.x, level.y - 4, level.width, canvas.height - level.y + 8);
+            context.fillRect(overlayX, overlayY, overlayW, overlayH);
+            // Clamp text position to overlay center
             context.fillStyle = "#ffffff";
             context.font = "24px Verdana";
-            drawCenterText("Game Over!", level.x, level.y + (canvas.height - level.y) / 2 + 10, level.width);
-            drawCenterText("Click to start", level.x, level.y + (canvas.height - level.y) / 2 + 40, level.width);
+            context.textAlign = "center";
+            var centerX = overlayX + overlayW / 2;
+            var centerY = overlayY + overlayH / 2;
+            // Ensure text does not overflow overlay
+            var textMargin = 20;
+            var textY1 = Math.max(centerY - 10, overlayY + textMargin);
+            var textY2 = Math.min(centerY + 30, overlayY + overlayH - textMargin);
+            context.fillText("Game Over!", centerX, textY1);
+            context.fillText("Click to start", centerX, textY2);
+            context.textAlign = "start";
+            context.restore();
         }
     }
 

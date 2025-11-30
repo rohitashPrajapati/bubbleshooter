@@ -76,10 +76,11 @@ window.onload = function() {
         // Calculate bubble size so bubbles fit exactly in canvas width
         var bubbleSize;
         if (window.innerWidth <= 600) {
-            // On mobile, fill entire width including offset
-            bubbleSize = ((cssWidth - bubbleGap * (level.columns - 1)) / (level.columns + 0.5)) * bubbleSizeScale;
+            // On mobile, calculate bubble size so grid width matches canvas width exactly
+            bubbleSize = ((cssWidth - bubbleGap) / (level.columns + 0.5)) * bubbleSizeScale;
+            level.tilewidth = bubbleSize - bubbleGap;
+            level.width = level.columns * (level.tilewidth + bubbleGap) + (level.tilewidth + bubbleGap) / 2;
             level.x = 0;
-            level.width = cssWidth;
         } else {
             bubbleSize = Math.min(
                 (cssWidth - bubbleGap * 2) / (level.columns + 0.5),
@@ -1129,7 +1130,7 @@ window.onload = function() {
         
         // Draw level background
         context.fillStyle = "#151929"; // darker game area background
-        context.fillRect(level.x, level.y - 4, level.width + 8, level.height + 18);
+        context.fillRect(level.x, level.y - 4, level.width, level.height + 18);
         
         // Render tiles
         renderTiles();
@@ -1141,7 +1142,7 @@ window.onload = function() {
         // cache for other renderers
         uiFloorTop = floorTop;
         uiFloorHeight = floorHeight;
-        context.fillRect(level.x, floorTop, level.width + 8, floorHeight);
+        context.fillRect(level.x, floorTop, level.width, floorHeight);
         // Update level.height so the bubble area background extends to the top of the score floor
         level.height = floorTop;
 
@@ -1150,7 +1151,7 @@ window.onload = function() {
         var baseLineY = floorTop + 26; // just below labels
         uiBaseLineY = baseLineY;
         context.fillStyle = "#3b59ff"; // bright blue baseline
-        context.fillRect(level.x, baseLineY, level.width + 8, baseLineHeight);
+        context.fillRect(level.x, baseLineY, level.width, baseLineHeight);
 
         // Draw 5 scoring segments and their labels
         var segmentWidth = level.width / 5;
@@ -1215,7 +1216,7 @@ window.onload = function() {
         if (gamestate == gamestates.gameover) {
             context.fillStyle = "rgba(0, 0, 0, 0.8)";
             // Cover the entire game area including the scoring floor
-            context.fillRect(level.x, level.y - 4, level.width + 8, canvas.height - level.y + 8);
+            context.fillRect(level.x, level.y - 4, level.width, canvas.height - level.y + 8);
             context.fillStyle = "#ffffff";
             context.font = "24px Verdana";
             drawCenterText("Game Over!", level.x, level.y + (canvas.height - level.y) / 2 + 10, level.width);

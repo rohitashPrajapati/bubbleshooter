@@ -1217,28 +1217,52 @@ window.onload = function() {
         
         // Game Over overlay
         if (gamestate == gamestates.gameover) {
-            // Clamp overlay to visible canvas area
-            var overlayX = 0;
-            var overlayY = 0;
-            var overlayW = Math.max(0, Math.min(canvas.width, cssWidth));
-            var overlayH = Math.max(0, Math.min(canvas.height, cssHeight));
+            // Use CSS pixel dimensions for overlay placement and sizing
+            var overlayW = Math.max(320, Math.min(cssWidth * 0.8, canvas.width / (window.devicePixelRatio || 1) * 0.8));
+            var overlayH = 180;
+            var overlayX = (cssWidth - overlayW) / 2;
+            var overlayY = (cssHeight - overlayH) / 2;
             context.save();
-            context.fillStyle = "rgba(0, 0, 0, 0.8)";
-            context.fillRect(overlayX, overlayY, overlayW, overlayH);
-            // Clamp text position to overlay center
+            // Dimmed background (cover only visible viewport)
+            context.globalAlpha = 0.7;
+            context.fillStyle = "#101422";
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.globalAlpha = 1.0;
+            // Message box (draw in CSS pixel coordinates, scaled for DPR)
+            context.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+            drawRoundedRect(overlayX, overlayY, overlayW, overlayH, 24);
+            context.fillStyle = "#232a4d";
+            context.fill();
+            context.strokeStyle = "#3b59ff";
+            context.lineWidth = 3;
+            context.stroke();
+            // Game Over text
             context.fillStyle = "#ffffff";
-            context.font = "24px Verdana";
+            context.font = "bold 32px Verdana";
             context.textAlign = "center";
-            var centerX = overlayX + overlayW / 2;
-            var centerY = overlayY + overlayH / 2;
-            // Ensure text does not overflow overlay
-            var textMargin = 20;
-            var textY1 = Math.max(centerY - 10, overlayY + textMargin);
-            var textY2 = Math.min(centerY + 30, overlayY + overlayH - textMargin);
-            context.fillText("Game Over!", centerX, textY1);
-            context.fillText("Click to start", centerX, textY2);
+            context.fillText("Game Over!", overlayX + overlayW/2, overlayY + 60);
+
+            // Draw 'New Game' button
+            var btnW = 180, btnH = 48;
+            var btnX = overlayX + (overlayW - btnW) / 2;
+            var btnY = overlayY + 100;
+            // Button background (eyeloveable green)
+            context.beginPath();
+            drawRoundedRect(btnX, btnY, btnW, btnH, 16);
+            context.fillStyle = "#3b59ff"; //"#43ea7c"; // pleasant green
+            context.fill();
+            context.strokeStyle = "#ffffff";
+            context.lineWidth = 2;
+            context.stroke();
+            // Button text
+            context.font = "bold 22px Verdana";
+            context.fillStyle = "#fff";
+            context.fillText("New Game", btnX + btnW/2, btnY + btnH/2 + 8);
             context.textAlign = "start";
             context.restore();
+
+            // Store button bounds for click detection
+            window._gameOverBtnBounds = { x: btnX, y: btnY, w: btnW, h: btnH };
         }
     }
 
@@ -1650,7 +1674,14 @@ window.onload = function() {
         if (gamestate == gamestates.ready) {
             shootBubble();
         } else if (gamestate == gamestates.gameover) {
-            newGame();
+            // Only start new game if button is clicked
+            var pos = getMousePos(canvas, e);
+            var btn = window._gameOverBtnBounds;
+            if (btn && pos.x >= btn.x && pos.x <= btn.x + btn.w && pos.y >= btn.y && pos.y <= btn.y + btn.h) {
+                newGame();
+            }
+            // Do nothing on overlay click
+            return;
         }
     }
     

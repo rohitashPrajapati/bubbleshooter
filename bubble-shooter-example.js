@@ -197,6 +197,20 @@ window.onload = function() {
     var bubblecolors = 7;
     // Number of easy rows before increasing color complexity
     var easyRows = 20;
+        // Centralized color count logic for bubble generation
+        function getColorCount() {
+            if (totalRowsAdded < easyRows) {
+                return Math.min(3, bubblecolors);
+            } else if (totalRowsAdded < easyRows + 5) {
+                return Math.min(4, bubblecolors);
+            } else if (totalRowsAdded < easyRows + 10) {
+                return Math.min(5, bubblecolors);
+            } else if (totalRowsAdded < easyRows + 15) {
+                return Math.min(6, bubblecolors);
+            } else {
+                return bubblecolors;
+            }
+        }
     // Track total rows added since game start
     var totalRowsAdded = 0;
     
@@ -924,18 +938,7 @@ window.onload = function() {
             if (level.tiles[0][j].type !== -1) currentRowCount++;
         }
         totalRowsAdded++;
-        var colorCount = bubblecolors;
-        if (totalRowsAdded <= easyRows) {
-            colorCount = Math.min(3, bubblecolors);
-        } else if (totalRowsAdded <= easyRows + 10) {
-            colorCount = Math.min(4, bubblecolors);
-        } else if (totalRowsAdded <= easyRows + 5) {
-            colorCount = Math.min(5, bubblecolors);
-        } else if (totalRowsAdded <= easyRows + 5) {
-            colorCount = Math.min(6, bubblecolors);
-        } else {
-            colorCount = bubblecolors;
-        }
+        var colorCount = getColorCount();
         for (var i=0; i<level.columns; i++) {
             level.tiles[i][0].type = randRange(0, colorCount-1);
         }
@@ -1506,21 +1509,12 @@ window.onload = function() {
     // Create a random level
     function createLevel() {
         // Create a level with random tiles
-        totalRowsAdded = totalRows; // Start with all rows drawn
+        totalRowsAdded = 0; // Reset for new game
         // Generate vertical/random honeycomb-like groups
         for (var i=0; i<level.columns; i++) {
-            var colorCount = bubblecolors;
-            var groupSize = 3;
-            if (totalRowsAdded <= easyRows) {
-                colorCount = Math.min(3, bubblecolors);
-                groupSize = 4;
-            } else if (totalRowsAdded <= easyRows + 10) {
-                colorCount = Math.min(4, bubblecolors);
-                groupSize = 2;
-            } else {
-                colorCount = bubblecolors;
-                groupSize = 1;
-            }
+            // For initial rows, always use 3 colors
+            var colorCount = (window.startingRows < easyRows) ? Math.min(3, bubblecolors) : getColorCount();
+            var groupSize = (colorCount === 3) ? 4 : (colorCount === 4 ? 2 : 1);
             var randomtile = randRange(0, colorCount-1);
             var count = 0;
             for (var j=0; j<totalRows; j++) {
@@ -1557,18 +1551,7 @@ window.onload = function() {
         player.bubble.y = player.y;
         player.bubble.visible = true;
         
-        var colorCount = bubblecolors;
-        if (totalRowsAdded <= easyRows) {
-            colorCount = Math.min(3, bubblecolors);
-        } else if (totalRowsAdded <= easyRows + 5) {
-            colorCount = Math.min(4, bubblecolors);
-        } else if (totalRowsAdded <= easyRows + 10) {
-            colorCount = Math.min(5, bubblecolors);
-        } else if (totalRowsAdded <= easyRows + 15) {
-            colorCount = Math.min(6, bubblecolors);
-        } else {
-            colorCount = bubblecolors;
-        }
+        var colorCount = getColorCount();
         var nextcolor = randRange(0, colorCount-1);
         player.nextbubble.tiletype = nextcolor;
     }

@@ -35,6 +35,25 @@ window.onload = function() {
     var soundIcon = document.getElementById("sound-icon");
     var isPaused = false;
     var soundEnabled = true;
+
+    // Web Audio API context and buffers
+    var audioContext = null;
+    var soundBuffers = {};
+
+    // Create AudioContext on first user gesture (iOS compatibility)
+    function createAudioContextOnce() {
+        if (!audioContext) {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                audioContext = null;
+            }
+        }
+    }
+
+    // Attach to first gesture
+    window.addEventListener('touchstart', createAudioContextOnce, { once: true });
+    window.addEventListener('mousedown', createAudioContextOnce, { once: true });
     
     // Responsive canvas setup for portrait mode
     function resizeCanvas() {
@@ -321,48 +340,44 @@ window.onload = function() {
     // Load sounds (call this from init)
     function loadSounds() {
         // Put your sound files at: ./sounds/pop.wav and ./sounds/bounce.wav (or change paths)
-        try {
-            sounds.stick = new Audio("./sounds/ball_stick.mp3"); // stick to another ball
-            sounds.pop = new Audio("./sounds/pop_light.mp3"); // popping cluster
-            sounds.bounce1 = new Audio("./sounds/bounce_1.mp3"); // first bounce
-            sounds.bounce2 = new Audio("./sounds/bounce_2.mp3"); // second bounce
-            sounds.bounce3 = new Audio("./sounds/bounce_3.mp3"); // third bounce
-            sounds.warning = new Audio("./sounds/warning.mp3"); // warning near game over
-            sounds.gameover = new Audio("./sounds/gameover.mp3"); // game over
-            // set volumes via master volume
-            sounds.stick.volume = soundVolume;
-            sounds.pop.volume = soundVolume;
-            sounds.bounce1.volume = soundVolume;
-            sounds.bounce2.volume = soundVolume;
-            sounds.bounce3.volume = soundVolume;
-            sounds.warning.volume = soundVolume;
-            sounds.gameover.volume = soundVolume;
-            // preload
-            sounds.stick.load();
-            sounds.pop.load();
-            sounds.bounce1.load();
-            sounds.bounce2.load();
-            sounds.bounce3.load();
-            sounds.warning.load();
-            sounds.gameover.load();
-        } catch(e) {
-            // ignore if audio can't be created
-            sounds = {};
-        }
+        var soundFiles = {
+            stick: "./sounds/ball_stick.mp3",
+            pop: "./sounds/pop_light.mp3",
+            bounce1: "./sounds/bounce_1.mp3",
+            bounce2: "./sounds/bounce_2.mp3",
+            bounce3: "./sounds/bounce_3.mp3",
+            warning: "./sounds/warning.mp3",
+            gameover: "./sounds/gameover.mp3"
+        };
+        Object.keys(soundFiles).forEach(function(key) {
+            fetch(soundFiles[key])
+                .then(function(response) { return response.arrayBuffer(); })
+                .then(function(arrayBuffer) {
+                    if (audioContext) {
+                        audioContext.decodeAudioData(arrayBuffer, function(buffer) {
+                            soundBuffers[key] = buffer;
+                        });
+                    }
+                });
+        });
     }
 
     // Play a sound. Use cloneNode to allow overlapping playback.
-    function playSound(audio) {
-        if (!audio || !soundEnabled) return;
+    function playSound(key) {
+        if (!soundEnabled || !audioContext) return;
+        if (!soundBuffers[key]) {
+            console.warn('Sound buffer not loaded for:', key);
+            return;
+        }
         try {
-            // ensure both the original and clone use current master volume
-            try { audio.volume = soundVolume; } catch(e) {}
-            var s = audio.cloneNode(true);
-            try { s.volume = soundVolume; } catch(e2) {}
-            s.play();
+            var source = audioContext.createBufferSource();
+            source.buffer = soundBuffers[key];
+            var gainNode = audioContext.createGain();
+            gainNode.gain.value = soundVolume;
+            source.connect(gainNode).connect(audioContext.destination);
+            source.start(0);
         } catch (e) {
-            // Fallback: try to reset and play (may cut previous sound)
-            try { audio.volume = soundVolume; audio.currentTime = 0; audio.play(); } catch(e2) {}
+            // Ignore playback errors
         }
     }
     
@@ -386,8 +401,9 @@ window.onload = function() {
     function init() {
         // Initial canvas resize for portrait mode
         resizeCanvas();
-        
-        // Load sounds
+
+        // Ensure AudioContext is created before loading sounds
+        createAudioContextOnce();
         loadSounds();
 
         // Load images
@@ -551,7 +567,7 @@ window.onload = function() {
             warningActive = true;
             warningTimer += dt;
             if (warningTimer - lastWarningPlayed >= 1.0) {
-                playSound(sounds.warning);
+                playSound('warning');
                 lastWarningPlayed = warningTimer;
             }
         } else {
@@ -640,7 +656,7 @@ window.onload = function() {
             score += cluster.length * 100;
             // Play pop sound when popping cluster
             if (cluster.length > 0) {
-                playSound(sounds.pop);
+                playSound('pop');
                 // Convert matched cluster itself to falling bubbles (scatter upward before falling)
                 for (var c=0; c<cluster.length; c++) {
                     var ct = cluster[c];
@@ -793,16 +809,16 @@ window.onload = function() {
             // Bounce at the top if bubble is moving up and hits the top
             if (b.y - b.r <= topBounceY && b.vy < 0) {
                 b.y = topBounceY + b.r;
-                b.vy = Math.abs(b.vy) * scatterBounceDamping * upperBounceStrength; // Bounce downward, controlled by global
+                b.vy = Math.abs(b.vy) * scatterBounceDamping * upperBounceStrength;
                 b.vx = b.vx * (1 + scatterBounceSpread * (Math.random() - 0.5));
                 // Play bounce sound based on bounce count
-                // if (typeof b.bounceCount === 'undefined' || b.bounceCount === 0) {
-                    playSound(sounds.bounce1);
-                // } else if (b.bounceCount === 1) {
-                    // playSound(sounds.bounce2);
-                // } else {
-                    // playSound(sounds.bounce3);
-                // }
+                if (typeof b.bounceCount === 'undefined' || b.bounceCount === 0) {
+                    playSound('bounce1');
+                } else if (b.bounceCount === 1) {
+                    playSound('bounce2');
+                } else {
+                    playSound('bounce3');
+                }
             }
             var contactY = floorY - b.r;
             if (b.y >= contactY) {
@@ -811,27 +827,24 @@ window.onload = function() {
                 if (typeof b.bounceCount === 'undefined') b.bounceCount = 0;
                 if (b.bounceCount < 3) { // Allow up to 3 bounces
                     var segIdx1 = getSegmentIndex(b.x);
-                    if (b.bounceCount === 0) score += getSegmentScore(segIdx1); // Only score on first contact
-                    // Bounce strength depends on fall height, but limit bounce so it can't go above half the play field
+                    if (b.bounceCount === 0) score += getSegmentScore(segIdx1);
                     var fallHeight = (typeof b.initialY !== 'undefined') ? Math.max(0, contactY - b.initialY) : 0;
-                    var bounceStrength = 0.5 + Math.min(1.0, fallHeight / (canvas.height * 0.5)); // 0.5 to 1.5 multiplier
+                    var bounceStrength = 0.5 + Math.min(1.0, fallHeight / (canvas.height * 0.5));
                     var vyBounce = Math.abs(b.vy) * scatterBounceDamping * bounceStrength;
-                    // Calculate max bounce velocity so bubble can't reach above half the play field
                     var maxBounceHeight = canvas.height * 0.5;
                     var maxVy = Math.sqrt(2 * gravity * maxBounceHeight);
                     b.vy = -Math.min(Math.max(220, vyBounce), maxVy);
                     b.vx = b.vx * (1 + scatterBounceSpread * (Math.random() - 0.5));
                     b.bounceCount++;
                     // Play bounce sound based on bounce count
-                    // if (b.bounceCount === 1) {
-                        playSound(sounds.bounce1);
-                    // } else if (b.bounceCount === 2) {
-                        // playSound(sounds.bounce2);
-                    // } else {
-                        // playSound(sounds.bounce3);
-                    // }
+                    if (b.bounceCount === 1) {
+                        playSound('bounce1');
+                    } else if (b.bounceCount === 2) {
+                        playSound('bounce2');
+                    } else {
+                        playSound('bounce3');
+                    }
                 } else {
-                    // Remove after last bounce
                     fallingBubbles.splice(i, 1);
                 }
             }
@@ -882,7 +895,7 @@ window.onload = function() {
             player.bubble.visible = false;
             level.tiles[gridpos.x][gridpos.y].type = player.bubble.tiletype;
             // play stick sound when bubble attaches
-            playSound(sounds.stick);
+            playSound('stick');
             
             // Check for game over
             if (checkGameOver()) {
@@ -933,12 +946,12 @@ window.onload = function() {
                     // If the bottom of the bubble is at or below the floorY
                     if (coord.tiley + level.tileheight >= floorY-26) {
                         if (!warningPlayed && gamestate != gamestates.gameover) {
-                            playSound(sounds.warning);
+                            playSound('warning');
                             warningPlayed = true;
                         }
                         nextBubble();
                         setGameState(gamestates.gameover);
-                        playSound(sounds.gameover);
+                        playSound('gameover');
                         return true;
                     }
                 }

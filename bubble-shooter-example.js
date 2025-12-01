@@ -479,22 +479,22 @@ window.onload = function() {
 
         // Smooth grid drop (belt animation)
         if (gamestate != gamestates.gameover) {
-            // Calculate distance from first row to floor
+            // Calculate distance from first row to floor using CSS pixel dimensions
             var firstRowY = level.y + levelFallOffset;
             var floorY = getFloorY();
+            var maxDistance = cssHeight - level.y; // use cssHeight for playable area
             var distanceToFloor = floorY - firstRowY;
-            var maxDistance = canvas.height - level.y; // maximum possible distance
             // Gradient: speed decreases as distanceToFloor decreases
             var speedRatio = Math.max(0, Math.min(1, distanceToFloor / maxDistance));
-            // Apply easing for smoother animation
+            // Only drop speed in last 20% of area
+            var speedDropThreshold = maxDistance * 0.20;
+            var inDangerZone = (distanceToFloor <= speedDropThreshold);
             var easedRatio = easeOutQuad(speedRatio);
-            // Interpolate between base and min speed
-            if (warningActive) {
+            if (inDangerZone || warningActive) {
                 levelFallSpeed = baseLevelFallSpeed * 0.40;
             } else {
                 levelFallSpeed = minLevelFallSpeed + (baseLevelFallSpeed - minLevelFallSpeed) * easedRatio;
             }
-            // Use subpixel movement for smoother animation
             levelFallOffset += dt * levelFallSpeed;
             if (levelFallOffset >= level.rowheight) {
                 levelFallOffset -= level.rowheight;
@@ -521,7 +521,7 @@ window.onload = function() {
         // Periodic warning logic
         var firstRowY = level.y + levelFallOffset;
         var floorY = getFloorY();
-        var maxDistance = canvas.height - level.y;
+        var maxDistance = cssHeight - level.y;
         var dangerZone = maxDistance * 0.20;
         var bubblesInDanger = false;
         // Check if any bubble is within the bottom 20% area
@@ -530,7 +530,10 @@ window.onload = function() {
                 var tile = level.tiles[i][j];
                 if (tile.type >= 0) {
                     var coord = getTileCoordinate(i, j);
-                    if ((floorY - (coord.tiley + level.tileheight)) <= dangerZone) {
+                    var bubbleBottom = coord.tiley + level.tileheight;
+                    var bubbleToFloor = floorY - bubbleBottom;
+                    // Only trigger warning if bubble is within last 20% above the floor (not at 50%)
+                    if (bubbleToFloor >= 0 && bubbleToFloor <= dangerZone) {
                         bubblesInDanger = true;
                         break;
                     }

@@ -812,13 +812,13 @@ window.onload = function() {
                 b.vy = Math.abs(b.vy) * scatterBounceDamping * upperBounceStrength;
                 b.vx = b.vx * (1 + scatterBounceSpread * (Math.random() - 0.5));
                 // Play bounce sound based on bounce count
-                if (typeof b.bounceCount === 'undefined' || b.bounceCount === 0) {
+                // if (typeof b.bounceCount === 'undefined' || b.bounceCount === 0) {
                     playSound('bounce1');
-                } else if (b.bounceCount === 1) {
-                    playSound('bounce2');
-                } else {
-                    playSound('bounce3');
-                }
+                // } else if (b.bounceCount === 1) {
+                //     playSound('bounce2');
+                // } else {
+                //     playSound('bounce3');
+                // }
             }
             var contactY = floorY - b.r;
             if (b.y >= contactY) {
@@ -837,13 +837,13 @@ window.onload = function() {
                     b.vx = b.vx * (1 + scatterBounceSpread * (Math.random() - 0.5));
                     b.bounceCount++;
                     // Play bounce sound based on bounce count
-                    if (b.bounceCount === 1) {
+                    // if (b.bounceCount === 1) {
                         playSound('bounce1');
-                    } else if (b.bounceCount === 2) {
-                        playSound('bounce2');
-                    } else {
-                        playSound('bounce3');
-                    }
+                    // } else if (b.bounceCount === 2) {
+                    //     playSound('bounce2');
+                    // } else {
+                    //     playSound('bounce3');
+                    // }
                 } else {
                     fallingBubbles.splice(i, 1);
                 }

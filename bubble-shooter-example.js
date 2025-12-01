@@ -324,19 +324,25 @@ window.onload = function() {
         try {
             sounds.stick = new Audio("./sounds/ball_stick.mp3"); // stick to another ball
             sounds.pop = new Audio("./sounds/pop_light.mp3"); // popping cluster
-            sounds.bounce = new Audio("./sounds/ball_bounce.mp3"); // wall bounce
+            sounds.bounce1 = new Audio("./sounds/bounce_1.mp3"); // first bounce
+            sounds.bounce2 = new Audio("./sounds/bounce_2.mp3"); // second bounce
+            sounds.bounce3 = new Audio("./sounds/bounce_3.mp3"); // third bounce
             sounds.warning = new Audio("./sounds/warning.mp3"); // warning near game over
             sounds.gameover = new Audio("./sounds/gameover.mp3"); // game over
             // set volumes via master volume
             sounds.stick.volume = soundVolume;
             sounds.pop.volume = soundVolume;
-            sounds.bounce.volume = soundVolume;
+            sounds.bounce1.volume = soundVolume;
+            sounds.bounce2.volume = soundVolume;
+            sounds.bounce3.volume = soundVolume;
             sounds.warning.volume = soundVolume;
             sounds.gameover.volume = soundVolume;
             // preload
             sounds.stick.load();
             sounds.pop.load();
-            sounds.bounce.load();
+            sounds.bounce1.load();
+            sounds.bounce2.load();
+            sounds.bounce3.load();
             sounds.warning.load();
             sounds.gameover.load();
         } catch(e) {
@@ -789,7 +795,14 @@ window.onload = function() {
                 b.y = topBounceY + b.r;
                 b.vy = Math.abs(b.vy) * scatterBounceDamping * upperBounceStrength; // Bounce downward, controlled by global
                 b.vx = b.vx * (1 + scatterBounceSpread * (Math.random() - 0.5));
-                playSound(sounds.bounce);
+                // Play bounce sound based on bounce count
+                // if (typeof b.bounceCount === 'undefined' || b.bounceCount === 0) {
+                    playSound(sounds.bounce1);
+                // } else if (b.bounceCount === 1) {
+                    // playSound(sounds.bounce2);
+                // } else {
+                    // playSound(sounds.bounce3);
+                // }
             }
             var contactY = floorY - b.r;
             if (b.y >= contactY) {
@@ -809,7 +822,14 @@ window.onload = function() {
                     b.vy = -Math.min(Math.max(220, vyBounce), maxVy);
                     b.vx = b.vx * (1 + scatterBounceSpread * (Math.random() - 0.5));
                     b.bounceCount++;
-                    playSound(sounds.bounce);
+                    // Play bounce sound based on bounce count
+                    // if (b.bounceCount === 1) {
+                        playSound(sounds.bounce1);
+                    // } else if (b.bounceCount === 2) {
+                        // playSound(sounds.bounce2);
+                    // } else {
+                        // playSound(sounds.bounce3);
+                    // }
                 } else {
                     // Remove after last bounce
                     fallingBubbles.splice(i, 1);

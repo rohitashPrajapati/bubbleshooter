@@ -581,13 +581,13 @@ window.onload = function() {
             player.bubble.angle = 180 - player.bubble.angle;
             player.bubble.x = level.x;
             // play bounce sound
-            playSound(sounds.bounce);
+            playSound(sounds.bounce1);
         } else if (player.bubble.x + level.tilewidth >= level.x + level.width) {
             // Right edge
             player.bubble.angle = 180 - player.bubble.angle;
             player.bubble.x = level.x + level.width - level.tilewidth;
             // play bounce sound
-            playSound(sounds.bounce);
+            playSound(sounds.bounce1);
         }
  
         // Collisions with the top of the level

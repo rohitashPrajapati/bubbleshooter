@@ -33,7 +33,7 @@ window.onload = function() {
     var resumeBtn = document.getElementById("resume-btn");
     var soundBtn = document.getElementById("sound-btn");
     var soundIcon = document.getElementById("sound-icon");
-    var isPaused = false;
+    var isPaused = true;
     var soundEnabled = true;
 
     // Web Audio API context and buffers
@@ -492,6 +492,11 @@ window.onload = function() {
     function update(tframe) {
         var dt = (tframe - lastframe) / 1000;
         lastframe = tframe;
+        
+        // If dt is too large (happens after unpausing), cap it to prevent jumps
+        if (dt > 0.1) {
+            dt = 0.016; // ~60fps frame time
+        }
         
         // Update the fps counter
         updateFps(dt);
@@ -1830,6 +1835,12 @@ window.onload = function() {
     var emailInput = document.getElementById("user-email");
     var emailPopupActive = false;
 
+    // Info Popup Logic
+    var infoPopup = document.getElementById("info-popup");
+    var infoClose = document.getElementById("info-popup-close");
+    var infoPlay = document.getElementById("info-popup-play");
+    var infoPopupActive = false;
+
     function showEmailPopup() {
         emailPopupActive = true;
         isPaused = true;
@@ -1838,8 +1849,21 @@ window.onload = function() {
 
     function hideEmailPopup() {
         emailPopupActive = false;
-        isPaused = false;
         emailPopup.style.display = "none";
+        // Show info popup after hiding email popup
+        showInfoPopup();
+    }
+
+    function showInfoPopup() {
+        infoPopupActive = true;
+        isPaused = true;
+        infoPopup.style.display = "flex";
+    }
+
+    function hideInfoPopup() {
+        infoPopupActive = false;
+        isPaused = false;
+        infoPopup.style.display = "none";
     }
 
     if (emailSubmit) {
@@ -1862,6 +1886,20 @@ window.onload = function() {
         emailClose.onclick = function() {
             hideEmailPopup();
             // Ensure audio context is ready if user clicked close
+            createAudioContextOnce();
+        };
+    }
+
+    if (infoClose) {
+        infoClose.onclick = function() {
+            hideInfoPopup();
+            createAudioContextOnce();
+        };
+    }
+
+    if (infoPlay) {
+        infoPlay.onclick = function() {
+            hideInfoPopup();
             createAudioContextOnce();
         };
     }

@@ -243,6 +243,30 @@
             }
         }
 
+        @keyframes springJump {
+            0% {
+                transform: scale(0.3) translateY(100px);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.1) translateY(-30px);
+                opacity: 1;
+            }
+
+            70% {
+                transform: scale(0.9) translateY(10px);
+            }
+
+            90% {
+                transform: scale(1.05) translateY(-5px);
+            }
+
+            100% {
+                transform: scale(1) translateY(0);
+            }
+        }
+
         /* Info Popup Styles */
         #info-popup {
             position: fixed;
@@ -329,6 +353,151 @@
         #info-popup-play:hover {
             transform: translateX(-50%) scale(1.1);
         }
+
+        /* Congratulations Popup Styles */
+        #congrats-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.0);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        #congrats-popup-bg {
+            width: min(100vw, 100vh * 11 / 16);
+            height: min(100vh, 100vw * 16 / 11);
+            background: url('images/shooter_bg.png') no-repeat center center;
+            background-size: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        #congrats-popup-content {
+            position: relative;
+            width: 85%;
+            max-width: 450px;
+            background: url('images/congo_popup.png') no-repeat center center;
+            background-size: 100% 100%;
+            padding: 80px 40px 80px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            min-height: 400px;
+            justify-content: flex-start;
+            animation: springJump 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        #congrats-popup h2 {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            color: #4CAF50;
+            font-size: 40px;
+            margin-bottom: 10px;
+            margin-top: 60px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(255, 179, 0, 0.5);
+        }
+
+        #congrats-score {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            color: #4CAF50;
+            font-size: 40px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            text-shadow: 2px 2px 4px rgba(255, 179, 0, 0.5);
+        }
+
+        #congrats-message {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            color: #5d4037;
+            font-size: 24px;
+            margin-bottom: 30px;
+            width: 90%;
+            line-height: 1.4;
+            font-weight: bold;
+            font-style: italic;
+            text-shadow: 1px 1px 3px rgba(255, 179, 0, 0.5);
+        }
+
+        #congrats-buttons {
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #congrats-restart,
+        #congrats-cart {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: transform 0.2s;
+        }
+
+        #congrats-restart img,
+        #congrats-cart img {
+            width: 80px;
+            display: block;
+        }
+
+        #congrats-restart:hover,
+        #congrats-cart:hover {
+            transform: scale(1.1);
+        }
+
+        /* Mobile-specific congrats popup styles */
+        @media (max-width: 600px) {
+            #congrats-popup-bg {
+                width: 100vw !important;
+                height: 100vh !important;
+                box-shadow: none;
+            }
+
+            #congrats-popup-content {
+                max-width: 90%;
+                padding: 60px 20px 60px 20px;
+                min-height: 320px;
+            }
+
+            #congrats-popup h2 {
+                font-size: 28px;
+                margin-top: 50px;
+            }
+
+            #congrats-score {
+                font-size: 32px;
+                margin-bottom: 15px;
+            }
+
+            #congrats-message {
+                font-size: 18px;
+                margin-bottom: 20px;
+            }
+
+            #congrats-restart img,
+            #congrats-cart img {
+                width: 65px;
+            }
+
+            #congrats-buttons {
+                bottom: -30px;
+                gap: 30px;
+            }
+        }
     </style>
     <script type='text/javascript' src='bubble-shooter-example.js'></script>
 </head>
@@ -384,6 +553,25 @@
             <button id="info-popup-play">
                 <img src="images/play_button-min.png" alt="Play">
             </button>
+        </div>
+    </div>
+
+    <!-- Congratulations Popup -->
+    <div id="congrats-popup">
+        <div id="congrats-popup-bg">
+            <div id="congrats-popup-content">
+                <h2>YOUR SCORE:</h2>
+                <p id="congrats-score">0</p>
+                <p id="congrats-message">We have added 1% discount to your account. Happy Shopping.</p>
+                <div id="congrats-buttons">
+                    <button id="congrats-restart">
+                        <img src="images/restart-min.png" alt="Restart">
+                    </button>
+                    <button id="congrats-cart">
+                        <img src="images/shoppingcart.png" alt="Cart">
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

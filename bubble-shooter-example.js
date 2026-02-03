@@ -955,8 +955,16 @@ window.onload = function() {
                             warningPlayed = true;
                         }
                         nextBubble();
-                        setGameState(gamestates.gameover);
-                        playSound('gameover');
+                        
+                        // Check if score is above 20,000 for congratulations
+                        if (score > 20000) {
+                            if (window.showCongratsPopup) {
+                                window.showCongratsPopup(score);
+                            }
+                        } else {
+                            setGameState(gamestates.gameover);
+                            playSound('gameover');
+                        }
                         return true;
                     }
                 }
@@ -1903,6 +1911,53 @@ window.onload = function() {
             createAudioContextOnce();
         };
     }
+
+    // Congratulations Popup Logic
+    var congratsPopup = document.getElementById("congrats-popup");
+    var congratsRestart = document.getElementById("congrats-restart");
+    var congratsCart = document.getElementById("congrats-cart");
+    var congratsScore = document.getElementById("congrats-score");
+    var congratsMessage = document.getElementById("congrats-message");
+
+    function showCongratsPopup(finalScore) {
+        // Update score display
+        if (congratsScore) {
+            congratsScore.textContent = finalScore.toLocaleString();
+        }
+        
+        // Calculate discount percentage based on score
+        var discountPercent = Math.min(5, Math.floor(finalScore / 15000));
+        if (congratsMessage && discountPercent > 0) {
+            congratsMessage.textContent = "We have added " + discountPercent + "% discount to your account. Happy Shopping.";
+        }
+        
+        isPaused = true;
+        congratsPopup.style.display = "flex";
+    }
+
+    function hideCongratsPopup() {
+        isPaused = false;
+        congratsPopup.style.display = "none";
+    }
+
+    if (congratsRestart) {
+        congratsRestart.onclick = function() {
+            hideCongratsPopup();
+            newGame();
+        };
+    }
+
+    if (congratsCart) {
+        congratsCart.onclick = function() {
+            hideCongratsPopup();
+            // Here you would redirect to cart or shopping page
+            console.log("Redirect to cart/shopping page");
+            // Example: window.location.href = "/cart";
+        };
+    }
+
+    // Make showCongratsPopup available globally so it can be called from game logic
+    window.showCongratsPopup = showCongratsPopup;
 
     // Call init to start the game
     init();

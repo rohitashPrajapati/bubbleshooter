@@ -1823,6 +1823,65 @@ window.onload = function() {
         soundIcon.innerHTML = soundEnabled ? soundOnSVG : soundOffSVG;
     }
 
+    // Email Popup Logic
+    var emailPopup = document.getElementById("email-popup");
+    var emailSubmit = document.getElementById("email-popup-submit");
+    var emailClose = document.getElementById("email-popup-close");
+    var emailInput = document.getElementById("user-email");
+    var emailPopupActive = false;
+
+    function showEmailPopup() {
+        emailPopupActive = true;
+        isPaused = true;
+        emailPopup.style.display = "flex";
+    }
+
+    function hideEmailPopup() {
+        emailPopupActive = false;
+        isPaused = false;
+        emailPopup.style.display = "none";
+    }
+
+    if (emailSubmit) {
+        emailSubmit.onclick = function() {
+            var email = emailInput.value.trim();
+            if (email) {
+                // Here you would typically send the email to a server
+                console.log("Email submitted: " + email);
+                hideEmailPopup();
+                // Ensure audio context is ready if user clicked submit
+                createAudioContextOnce(); 
+            } else {
+                // Shake animation or visual cue could be added here
+                emailInput.focus();
+            }
+        };
+    }
+
+    if (emailClose) {
+        emailClose.onclick = function() {
+            hideEmailPopup();
+            // Ensure audio context is ready if user clicked close
+            createAudioContextOnce();
+        };
+    }
+
     // Call init to start the game
     init();
+
+    // Show popup after a short delay or immediately after init
+    // Check if we haven't shown it yet (could use local storage to show only once per session)
+    setTimeout(function() {
+        if (!initialized) {
+            // If game is still loading, wait a bit more or hook into initialized check
+            var checkInitInterval = setInterval(function() {
+                if (initialized) {
+                    clearInterval(checkInitInterval);
+                    showEmailPopup();
+                }
+            }, 100);
+        } else {
+            showEmailPopup();
+        }
+    }, 500);
 };

@@ -962,8 +962,12 @@ window.onload = function() {
                                 window.showCongratsPopup(score);
                             }
                         } else {
-                            setGameState(gamestates.gameover);
-                            playSound('gameover');
+                            if (window.showSorryPopup) {
+                                window.showSorryPopup();
+                            } else {
+                                setGameState(gamestates.gameover);
+                                playSound('gameover');
+                            }
                         }
                         return true;
                     }
@@ -1956,8 +1960,40 @@ window.onload = function() {
         };
     }
 
-    // Make showCongratsPopup available globally so it can be called from game logic
+    // Sorry Popup Logic
+    var sorryPopup = document.getElementById("sorry-popup");
+    var sorryRestart = document.getElementById("sorry-restart");
+    var sorryHome = document.getElementById("sorry-home");
+
+    function showSorryPopup() {
+        isPaused = true;
+        sorryPopup.style.display = "flex";
+    }
+
+    function hideSorryPopup() {
+        isPaused = false;
+        sorryPopup.style.display = "none";
+    }
+
+    if (sorryRestart) {
+        sorryRestart.onclick = function() {
+            hideSorryPopup();
+            newGame();
+        };
+    }
+
+    if (sorryHome) {
+        sorryHome.onclick = function() {
+            hideSorryPopup();
+            // Redirect to home page
+            console.log("Redirect to home page");
+            // window.location.href = "/";
+        };
+    }
+
+    // Make functions available globally so they can be called from game logic
     window.showCongratsPopup = showCongratsPopup;
+    window.showSorryPopup = showSorryPopup;
 
     // Call init to start the game
     init();
